@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Up Vision Clock IN & OUT</title>
+    <title>Up Vision Clock IN & OUT - Supabase</title>
     <!-- Page Thumbnail/Favicon -->
     <link rel="icon" type="image/png" href="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true">
     <!-- JsBarcode for Barcode Generation -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Google Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     
@@ -20,7 +22,7 @@
             overflow: hidden;
         }
         
-        /* --- KIOSK HOME SCREEN UI FIXES --- */
+        /* Header Bar */
         .top-header-bar {
             position: absolute; top: 0; left: 0; width: 100%; height: 80px;
             background-color: #8b1d24;
@@ -38,27 +40,11 @@
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .top-center-logo {
-            max-height: 45px;
-            object-fit: contain;
-        }
         
-        .bottom-title {
-            position: absolute; bottom: 20px; left: 0; width: 100%;
-            text-align: center; font-size: 2.2rem; font-weight: 900;
-            color: #111; z-index: 10; margin: 0; letter-spacing: 1px;
-        }
-
-        .vending-machine-bg { 
-            position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); 
-            height: 50vh; z-index: 1; pointer-events: none; opacity: 0.6; 
-        }
-        .vending-machine-bg img { height: 100%; object-fit: contain; }
+        /* DB Connection Status Indicator */
+        #connection-status { position: absolute; top: 35px; right: 175px; width: 16px; height: 16px; border-radius: 50%; background-color: #ffc107; z-index: 11; box-shadow: 0 0 5px rgba(0,0,0,0.2); border: 2px solid #fff; transition: 0.3s; }
         
-        /* Dashboard DB Status Indicator */
-        #connection-status { position: absolute; top: 35px; right: 175px; width: 16px; height: 16px; border-radius: 50%; background-color: #28a745; z-index: 11; box-shadow: 0 0 5px rgba(0,0,0,0.2); border: 2px solid #fff; transition: 0.3s; }
-        
-        /* Updated Admin Button to Settings Icon */
+        /* Admin Button */
         #admin-btn { position: absolute; top: 24px; right: 30px; background: transparent; border: none; color: #ffffff; cursor: pointer; transition: 0.2s; z-index: 12; padding: 0; display: flex; align-items: center; justify-content: center; }
         #admin-btn:hover { transform: rotate(90deg); color: #f4f7f6; }
         
@@ -105,22 +91,13 @@
         .btn-print { background-color: #17a2b8; }
         .btn-delete { background-color: #dc3545; }
         
-        /* Sub-Tabs for Employee Filters */
         .filter-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 16px; border: 1px solid #ccc; background: #e9ecef; cursor: pointer; border-radius: 4px; font-weight: bold; color: #555; margin-bottom: 5px; }
         .filter-btn.active { background: #17a2b8; color: white; border-color: #17a2b8; }
         
-        /* Report & Data Table Styles */
         .report-controls { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; justify-content: space-between; }
         .report-table { width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 14px; text-align: center; vertical-align: middle; margin-bottom: 40px; border: 2px solid #000; }
-        .report-table th, .report-table td { border: 1px solid #000; padding: 6px; text-align: center; vertical-align: middle; }
-        .report-header-title { background-color: #bfbfbf; font-weight: bold; font-size: 18px; padding: 10px !important; border: 2px solid #000; text-transform: capitalize; }
-        .text-green { color: #00b050; font-weight: bold; }
-        .row-break { color: #dc3545; }
-        
-        /* Interactive Input Styles for Report */
-        .note-input, .time-input { width: 100%; border: 1px solid transparent; text-align: center; background: transparent; font-family: Calibri, sans-serif; font-size: inherit; padding: 4px; box-sizing: border-box; color: inherit; }
-        .note-input:hover, .note-input:focus, .time-input:hover, .time-input:focus { border: 1px solid #ccc; background: #fff; outline: none; }
+        .report-table th, .report-table td { border: 1px solid #000; padding: 8px; text-align: center; vertical-align: middle; }
         
         @media print {
             body * { visibility: hidden; }
@@ -131,25 +108,21 @@
 </head>
 <body>
 
-    <!-- KIOSK BACKGROUND CORNER ELEMENTS -->
+    <!-- KIOSK HEADER -->
     <div class="top-header-bar">
         <img src="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true" alt="Up Vision Logo" class="top-left-logo">
         <div class="top-center-logo-wrapper">
-            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Logo missing. Place image_1fb393.png in the same folder as index.html.'; this.style.padding='5px';">
+            <span style="font-weight:bold; font-size:1.2rem; color:#8b1d24;">Up Vision Kiosk System</span>
         </div>
     </div>
     
-    <!-- Status Indicator -->
-    <div id="connection-status" title="Local Storage Active"></div>
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" title="Connecting to Supabase..."></div>
     <button id="admin-btn" onclick="showLoginModal()" title="Admin Settings">
         <span class="material-symbols-outlined" style="font-size: 32px;">settings</span>
     </button>
 
-    <div class="vending-machine-bg">
-        <img src="vending_machine.png" alt="" onerror="this.style.display='none';">
-    </div>
-
-    <!-- Kiosk View -->
+    <!-- Kiosk Main View -->
     <div id="kiosk-view">
         <div id="clock">00:00:00</div>
         <div id="date-display">Date</div>
@@ -172,10 +145,10 @@
         <div id="status-display" class="status-message"></div>
     </div>
 
-    <!-- Confirmation Modal for Punch -->
+    <!-- Confirmation Modal -->
     <div id="confirm-modal" class="modal">
         <div class="modal-content">
-            <h3 id="confirm-title">Confirm Punch</h3>
+            <h3 id="confirm-title">Confirm Scan</h3>
             <p id="confirm-text"></p>
             <div style="display: flex; gap: 15px; justify-content: center;">
                 <button class="action-btn" id="confirm-btn" onclick="executePunch()" style="font-size: 1.5rem; padding: 15px 40px;">Yes, Confirm</button>
@@ -184,17 +157,17 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
+    <!-- Admin Login Modal -->
     <div id="login-modal" class="modal">
         <div class="modal-content" style="max-width: 350px;">
             <h3>Admin Login</h3>
-            <div class="form-group" style="text-align: left;">
+            <div class="form-group">
                 <label>Username</label>
-                <input type="text" id="admin-username" value="admin" placeholder="e.g. admin" style="width:100%; padding:10px; font-size: 1.2rem;" onkeypress="handleLoginEnter(event)">
+                <input type="text" id="admin-username" value="admin" placeholder="admin" onkeypress="handleLoginEnter(event)">
             </div>
-            <div class="form-group" style="text-align: left;">
+            <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="admin-password" placeholder="••••••••" style="width:100%; padding:10px; font-size: 1.2rem;" onkeypress="handleLoginEnter(event)">
+                <input type="password" id="admin-password" placeholder="••••••••" onkeypress="handleLoginEnter(event)">
             </div>
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                 <button class="action-btn" onclick="verifyLogin()">Login</button>
@@ -203,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Barcode Print Modal -->
+    <!-- Print Badge Modal -->
     <div id="print-modal" class="modal">
         <div class="modal-content">
             <h3>Employee Badge</h3>
@@ -222,11 +195,10 @@
         <div class="modal-content">
             <h3 id="emp-modal-title">Add New Employee</h3>
             <input type="hidden" id="emp-original-id">
-            <input type="hidden" id="emp-created-at">
             
             <div class="form-group">
-                <label>Badge ID</label>
-                <input type="text" id="emp-id" placeholder="Enter custom ID (or leave blank to auto-generate)">
+                <label>Employee / Badge ID</label>
+                <input type="text" id="emp-id" placeholder="Enter badge ID (e.g. 1001)">
             </div>
             
             <div class="form-group">
@@ -234,70 +206,15 @@
                 <input type="text" id="emp-name" placeholder="John Doe">
             </div>
             
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="width: 50%;">
-                    <label>Working Area (Department)</label>
-                    <select id="emp-dept-select" onchange="toggleDeptCustom()">
-                        <option value="Production">Production</option>
-                        <option value="Inventory">Inventory</option>
-                        <option value="Quality">Quality</option>
-                        <option value="custom" style="font-weight: bold;">+ Add more...</option>
-                    </select>
-                    <input type="text" id="emp-dept-custom" placeholder="Type new department name..." style="display:none; margin-top:10px;">
-                </div>
-                <div class="form-group" style="width: 50%;">
-                    <label>Employment / Agency</label>
-                    <select id="emp-type-select" onchange="toggleTypeCustom()">
-                        <option value="Signifi">Signifi</option>
-                        <option value="T-DOT">T-DOT</option>
-                        <option value="Carrier Club">Carrier Club</option>
-                        <option value="custom" style="font-weight: bold;">+ Add more (New Agency)...</option>
-                    </select>
-                    <input type="text" id="emp-type-custom" placeholder="Type new agency name..." style="display:none; margin-top:10px;">
-                </div>
-            </div>
-
-            <!-- Pay Type & Leave Tracking (Only for Signifi) -->
-            <div id="signifi-only-fields">
-                <div class="form-group">
-                    <label>Pay Type <small style="color:gray;">(Signifi Only)</small></label>
-                    <select id="emp-pay-type">
-                        <option value="Salaried">Salaried</option>
-                        <option value="Hourly">Hourly</option>
-                    </select>
-                </div>
-
-                <!-- Vacation, Sick, and Paid Lieu Tracking -->
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="width: 50%;">
-                        <label>Vacation Days / Year</label>
-                        <input type="number" id="emp-vacation-total" value="10">
-                    </div>
-                    <div class="form-group" style="width: 50%;">
-                        <label>Vacations Used</label>
-                        <input type="number" id="emp-vacation-used" value="0">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="width: 50%;">
-                        <label>Sick Days / Year</label>
-                        <input type="number" id="emp-sick-total" value="5">
-                    </div>
-                    <div class="form-group" style="width: 50%;">
-                        <label>Sick Days Used</label>
-                        <input type="number" id="emp-sick-used" value="0">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="width: 50%;">
-                        <label>Paid Lieu / Year</label>
-                        <input type="number" id="emp-lieu-total" value="0">
-                    </div>
-                    <div class="form-group" style="width: 50%;">
-                        <label>Paid Lieu Used</label>
-                        <input type="number" id="emp-lieu-used" value="0">
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Department</label>
+                <select id="emp-dept-select" onchange="toggleDeptCustom()">
+                    <option value="Production">Production</option>
+                    <option value="Inventory">Inventory</option>
+                    <option value="Quality">Quality</option>
+                    <option value="custom" style="font-weight: bold;">+ Add custom department...</option>
+                </select>
+                <input type="text" id="emp-dept-custom" placeholder="Type department name..." style="display:none; margin-top:10px;">
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
@@ -307,77 +224,23 @@
         </div>
     </div>
 
-    <!-- Add Admin User Modal -->
-    <div id="add-admin-modal" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <h3>Create Admin User</h3>
-            <div class="form-group">
-                <label>Username (or Email)</label>
-                <input type="text" id="new-admin-user" placeholder="user@signifi.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="text" id="new-admin-pass">
-            </div>
-            <div class="form-group">
-                <label>Account Role</label>
-                <select id="new-admin-role">
-                    <option value="Admin">Standard Admin</option>
-                    <option value="Super Admin">Super Admin</option>
-                </select>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                <button class="action-btn" onclick="saveNewAdmin()">Create User</button>
-                <button class="action-btn" style="background:#dc3545;" onclick="closeModal('add-admin-modal')">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Dashboard -->
+    <!-- Admin Dashboard View -->
     <div id="admin-view">
         <div class="admin-header">
             <button class="tab-btn active" onclick="switchTab('employees')">Manage Employees</button>
-            <button class="tab-btn" onclick="switchTab('history')">Shift History</button>
+            <button class="tab-btn" onclick="switchTab('history')">Scan Logs (Supabase)</button>
             <button class="tab-btn" onclick="switchTab('reports')">Timesheet Report</button>
-            <button class="tab-btn" onclick="switchTab('signifi-report')">Signifi Report</button>
-            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Supabase Config</button>
             <button class="exit" onclick="exitAdmin()">Exit to Kiosk</button>
         </div>
 
         <!-- Employees Tab -->
         <div id="employees" class="tab-content active">
             <div class="report-controls">
-                <h2 style="margin: 0;">Employee Directory <span style="font-size: 1.2rem; color: #555;">(Total Active: <span id="total-emp-count">0</span>)</span></h2>
+                <h2 style="margin: 0;">Employee Directory <span style="font-size: 1.2rem; color: #555;">(Active: <span id="total-emp-count">0</span>)</span></h2>
                 <div>
-                    <button class="action-btn" id="view-laidoff-btn" style="background-color: #6c757d; margin-right: 10px;" onclick="toggleLaidOffView()">View Laid Off</button>
+                    <button class="action-btn" id="view-laidoff-btn" style="background-color: #6c757d; margin-right: 10px;" onclick="toggleLaidOffView()">View Inactive</button>
                     <button class="action-btn" onclick="openEmployeeModal()">+ Add New Employee</button>
-                </div>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
-                <!-- Agencies Filter Row -->
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom: 10px; flex-wrap:wrap;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Agencies:</strong>
-                    <div class="filter-tabs" id="dynamic-emp-agency-tabs" style="margin-bottom:0;">
-                        <button class="filter-btn active" onclick="setEmployeeAgencyFilter('All')">All</button>
-                    </div>
-                </div>
-                <!-- Departments Filter Row -->
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Departments:</strong>
-                    <div class="filter-tabs" id="dynamic-emp-dept-tabs" style="margin-bottom:0;">
-                        <button class="filter-btn active" onclick="setEmployeeDeptFilter('All')">All</button>
-                    </div>
-                </div>
-                <!-- Sort Row for Manage Employees -->
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Sort By:</strong>
-                    <select id="emp-sort" onchange="loadEmployees()" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer;">
-                        <option value="name_asc">Alphabetical (A-Z)</option>
-                        <option value="name_desc">Alphabetical (Z-A)</option>
-                        <option value="newest">Latest Added First</option>
-                        <option value="oldest">Oldest Added First</option>
-                    </select>
                 </div>
             </div>
 
@@ -385,57 +248,35 @@
                 <thead>
                     <tr style="background-color: #d9d9d9; font-weight: bold;">
                         <th>S.NO.</th>
-                        <th>Badge ID</th>
-                        <th>Name</th>
-                        <th>Dept / Agency</th>
-                        <th>Pay Type</th>
-                        <th>Vacation (Rem/Tot)</th>
-                        <th>Sick (Rem/Tot)</th>
-                        <th>Lieu (Rem/Tot)</th>
+                        <th>Employee ID</th>
+                        <th>Full Name</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Created At</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="employee-list-body">
-                    <tr><td colspan="9" style="text-align:center;">Loading...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Loading from Supabase...</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- History Tab -->
+        <!-- History / Scan Logs Tab -->
         <div id="history" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="margin: 0;">Raw Punch History</h2>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label style="font-weight: bold; font-size: 1.1rem;">Group By:</label>
-                    <select id="history-group-select" onchange="renderHistoryTable()" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem;">
-                        <option value="none">None (Chronological)</option>
-                        <option value="day">Day</option>
-                        <option value="week">Week</option>
-                        <option value="month">Month</option>
-                        <option value="name">Employee Name</option>
-                    </select>
-                </div>
+                <h2 style="margin: 0;">Scan Logs (`public.scan_logs`)</h2>
+                <button class="action-btn" onclick="loadHistory()" style="background:#17a2b8;">Refresh Logs</button>
             </div>
 
             <table class="report-table" style="text-align: left;" id="historyTable">
                 <thead>
                     <tr style="background-color: #d9d9d9; font-weight: bold;">
-                        <th>Date & Time</th>
-                        <th>Name</th>
-                        <th>Action</th>
-                        <th>Type</th>
-                    </tr>
-                    <tr style="background-color: #f4f7f6;">
-                        <th style="padding: 4px;"><input type="text" id="filter-history-date" onkeyup="filterHistoryTable()" placeholder="Filter Date..." style="width:100%; padding:5px; box-sizing:border-box; font-weight:normal;"></th>
-                        <th style="padding: 4px;"><input type="text" id="filter-history-name" onkeyup="filterHistoryTable()" placeholder="Filter Name..." style="width:100%; padding:5px; box-sizing:border-box; font-weight:normal;"></th>
-                        <th style="padding: 4px;">
-                            <select id="filter-history-action" onchange="filterHistoryTable()" style="width:100%; padding:5px; box-sizing:border-box; font-weight:normal;">
-                                <option value="">All</option>
-                                <option value="IN">IN</option>
-                                <option value="OUT">OUT</option>
-                            </select>
-                        </th>
-                        <th style="padding: 4px;"><input type="text" id="filter-history-type" onkeyup="filterHistoryTable()" placeholder="Filter Type..." style="width:100%; padding:5px; box-sizing:border-box; font-weight:normal;"></th>
+                        <th>Scanned At</th>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Barcode</th>
                     </tr>
                 </thead>
                 <tbody id="history-body"></tbody>
@@ -444,487 +285,95 @@
 
         <!-- Reports Tab -->
         <div id="reports" class="tab-content">
-            
-            <!-- Multi-Select Filters for Report Generation -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
-                <!-- Agencies Filter Row -->
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom: 10px; flex-wrap:wrap;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Agencies:</strong>
-                    <div class="filter-tabs" id="dynamic-report-filter-tabs" style="margin-bottom:0;">
-                        <button class="filter-btn active" onclick="setReportFilter('All')">All Reports</button>
-                    </div>
-                </div>
-                <!-- Departments Filter Row -->
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Departments:</strong>
-                    <div class="filter-tabs" id="dynamic-dept-filter-tabs" style="margin-bottom:0;">
-                        <button class="filter-btn active" onclick="toggleDeptFilter('All')">All</button>
-                    </div>
-                </div>
-                <!-- Sort Row -->
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Sort By:</strong>
-                    <select id="report-sort" onchange="generateReport()" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer;">
-                        <option value="name_asc">Alphabetical (A-Z)</option>
-                        <option value="name_desc">Alphabetical (Z-A)</option>
-                        <option value="newest">Latest Added First</option>
-                        <option value="oldest">Oldest Added First</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="report-controls" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; flex-direction: column; align-items: stretch; gap: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="font-size: 1.2rem;"><strong>Select Range:</strong></label>
-                        <input type="date" id="report-start" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
-                        <span style="font-size: 1.2rem; font-weight: bold;">to</span>
-                        <input type="date" id="report-end" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
-                        <button class="action-btn" onclick="generateReport()" style="background-color: #007bff; margin-left: 10px;">Generate</button>
-                    </div>
-                    <div>
-                        <button class="action-btn" id="save-changes-btn" onclick="saveReportChanges()" style="background-color: #28a745; margin-right: 10px;">Save Changes</button>
-                        <button class="action-btn" onclick="exportReportToExcel()">Export to Excel</button>
-                    </div>
-                </div>
-                
-                <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #ccc; padding-top: 15px;">
-                    <label style="font-size: 1.1rem;"><strong>Mark Stat Holiday:</strong></label>
-                    <input type="date" id="stat-holiday-date" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
-                    <button class="action-btn" onclick="applyStatHoliday()" style="background-color: #17a2b8;">Apply to Report</button>
-                    <span style="color: #666; font-size: 0.95rem; margin-left: 10px;">(Sets 'Stat Holiday' for Signifi and 'Off' for Agencies on this date)</span>
+            <div class="report-controls" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 1.2rem;"><strong>Select Date Range:</strong></label>
+                    <input type="date" id="report-start" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <span style="font-size: 1.2rem; font-weight: bold;">to</span>
+                    <input type="date" id="report-end" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <button class="action-btn" onclick="generateReport()" style="background-color: #007bff; margin-left: 10px;">Generate Report</button>
                 </div>
             </div>
             
             <div id="report-container" style="overflow-x: auto; background: white; padding: 10px; border: 1px solid #ddd; margin-top: 15px;">
-                <p>Select a date range and click Generate to view the report.</p>
+                <p>Select a date range and click Generate to view scan activity.</p>
             </div>
         </div>
 
-        <!-- Signifi Report Tab -->
-        <div id="signifi-report" class="tab-content">
-            <!-- Filter & Sort & View Controls -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Departments:</strong>
-                    <div class="filter-tabs" id="dynamic-signifi-dept-tabs" style="margin-bottom:0;">
-                        <button class="filter-btn active" onclick="toggleSignifiDeptFilter('All')">All</button>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px;">Sort By:</strong>
-                    <select id="signifi-report-sort" onchange="generateSignifiSummary()" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer;">
-                        <option value="name_asc">Alphabetical (A-Z)</option>
-                        <option value="name_desc">Alphabetical (Z-A)</option>
-                        <option value="newest">Latest Added First</option>
-                        <option value="oldest">Oldest Added First</option>
-                    </select>
-                    
-                    <strong style="font-size:1.1rem; color:#333; min-width: 110px; margin-left: 20px;">View Mode:</strong>
-                    <select id="signifi-report-view-mode" onchange="generateSignifiSummary()" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer;">
-                        <option value="bottom">Weekly Report</option>
-                        <option value="weekly">Full Report</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="report-controls" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; flex-direction: column; align-items: stretch; gap: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="font-size: 1.2rem;"><strong>Select Range:</strong></label>
-                        <input type="date" id="summary-start" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
-                        <span style="font-size: 1.2rem; font-weight: bold;">to</span>
-                        <input type="date" id="summary-end" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
-                        <button class="action-btn" onclick="generateSignifiSummary()" style="background-color: #007bff; margin-left: 10px;">Generate</button>
-                    </div>
-                    <div>
-                        <button class="action-btn" onclick="exportSummaryToExcel()">Export to Excel (Email)</button>
-                    </div>
-                </div>
-            </div>
-            <div id="summary-container" style="overflow-x: auto; background: white; padding: 10px; border: 1px solid #ddd; margin-top: 15px;">
-                <p>Select a date range and click Generate to view the Signifi Summary Report.</p>
-            </div>
-        </div>
-
-        <!-- Settings Tab -->
+        <!-- Supabase Settings Tab -->
         <div id="settings" class="tab-content">
-            <h2 style="margin-top: 0;">Account Settings</h2>
-            
-            <div style="max-width: 400px; margin-bottom: 40px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                <h3 style="margin-top:0;">Change My Password</h3>
+            <h2 style="margin-top: 0;">Supabase Database Connection</h2>
+            <div style="max-width: 550px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
                 <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" id="new-my-password" placeholder="Enter a new password...">
+                    <label>Supabase URL</label>
+                    <input type="text" id="cfg-supabase-url" placeholder="https://your-project.supabase.co">
                 </div>
-                <button class="action-btn" onclick="changeMyPassword()" style="width: 100%;">Update Password</button>
-            </div>
-
-            <!-- Super Admin Only Section -->
-            <div id="super-admin-section" style="display:none; border-top: 2px solid #ccc; padding-top: 30px;">
-                <div class="report-controls">
-                    <h3 style="margin: 0; font-size: 1.8rem;">Manage Admin Users</h3>
-                    <button class="action-btn" onclick="openAddAdminModal()">+ Add User</button>
+                <div class="form-group">
+                    <label>Supabase Anon Key</label>
+                    <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
                 </div>
-                <table class="report-table" style="text-align: left;">
-                    <thead><tr class="bg-dark-grey" style="background-color: #d9d9d9;"><th>Username / Email</th><th>Account Role</th><th style="text-align:center;">Actions</th></tr></thead>
-                    <tbody id="admin-list-body"></tbody>
-                </table>
+                <button class="action-btn" onclick="saveSupabaseConfig()" style="width: 100%;">Save Configuration & Connect</button>
             </div>
         </div>
-
     </div>
 
     <script>
-        // === LOCAL STORAGE PERSISTENCE ENGINE ===
-        const STORAGE_KEYS = {
-            EMPLOYEES: 'upvision_employees',
-            SHIFTS: 'upvision_shifts',
-            OVERRIDES: 'upvision_overrides',
-            NOTES: 'upvision_notes',
-            ADMINS: 'upvision_admins'
-        };
+        // === SUPABASE CONFIGURATION ===
+        // Pre-fill or configure in Settings UI
+        let SUPABASE_URL = localStorage.getItem('supabase_url') || '';
+        let SUPABASE_KEY = localStorage.getItem('supabase_key') || '';
 
-        function getLocal(key, defaultVal) {
-            try {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : defaultVal;
-            } catch (e) {
-                console.error("Error reading localStorage:", e);
-                return defaultVal;
-            }
-        }
+        let supabaseClient = null;
 
-        function setLocal(key, data) {
-            try {
-                localStorage.setItem(key, JSON.stringify(data));
-            } catch (e) {
-                console.error("Error saving to localStorage:", e);
-            }
-        }
-
-        // Initialize default super admin if none exists
-        (function initDefaults() {
-            let admins = getLocal(STORAGE_KEYS.ADMINS, null);
-            if (!admins || admins.length === 0) {
-                setLocal(STORAGE_KEYS.ADMINS, [
-                    { id: 'admin_1', username: 'admin', password: 'password123', role: 'Super Admin' }
-                ]);
-            }
-            if (!getLocal(STORAGE_KEYS.EMPLOYEES, null)) {
-                setLocal(STORAGE_KEYS.EMPLOYEES, []);
-            }
-            if (!getLocal(STORAGE_KEYS.SHIFTS, null)) {
-                setLocal(STORAGE_KEYS.SHIFTS, []);
-            }
-            if (!getLocal(STORAGE_KEYS.OVERRIDES, null)) {
-                setLocal(STORAGE_KEYS.OVERRIDES, {});
-            }
-            if (!getLocal(STORAGE_KEYS.NOTES, null)) {
-                setLocal(STORAGE_KEYS.NOTES, {});
-            }
-        })();
-
-        // Status Indicator setup
-        const statusCircle = document.getElementById('connection-status');
-        statusCircle.style.backgroundColor = '#28a745'; 
-        statusCircle.title = "Local Storage Connected";
-
-        // Helper function for Excel Column Letters (A, B, C... Z, AA, AB)
-        function getColLtr(n) {
-            let s = "";
-            while(n >= 0) {
-                s = String.fromCharCode(n % 26 + 65) + s;
-                n = Math.floor(n / 26) - 1;
-            }
-            return s;
-        }
-
-        // Global filter arrays
-        let currentReportFilter = 'All'; 
-        let currentDeptFilters = ['All']; 
-        let currentSignifiDeptFilters = ['All']; 
-        let availableDepartments = [];
-        
-        let currentEmpAgencyFilter = 'All';
-        let currentEmpDeptFilter = 'All';
-        let viewingLaidOff = false;
-
-        let globalHistoryData = []; // Store raw history for grouping
-
-        // === LIVE TIMESHEET RECALCULATION ENGINE (UI) ===
-        window.recalcTime = function(gIdx, eIdx, colIdx, numCols, empType, payType, changedField = '') {
-            const isSignifi = (empType === 'Signifi');
-            const isHourly = (payType === 'Hourly');
-            
-            let inInput = document.getElementById(`in_${gIdx}_${eIdx}_${colIdx}`);
-            let outInput = document.getElementById(`out_${gIdx}_${eIdx}_${colIdx}`);
-            let breakInput = document.getElementById(`break_${gIdx}_${eIdx}_${colIdx}`);
-            let totalInput = document.getElementById(`total_${gIdx}_${eIdx}_${colIdx}`);
-
-            if (changedField === 'total') {
-                let cTotal = totalInput.value.trim().toLowerCase();
-                if (cTotal === '0' || cTotal === '0:00') {
-                    inInput.value = '0';
-                    outInput.value = '0';
-                    breakInput.value = '0';
-                }
-            }
-
-            const inVal = inInput.value.trim();
-            const outVal = outInput.value.trim();
-            const thirdVal = breakInput.value.trim();
-
-            const parseTime = (str) => {
-                if(!str || !str.includes(':')) return 0;
-                let parts = str.split(':');
-                return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-            };
-
-            const formatTime = (mins) => {
-                if(mins === 0 && (!inVal || !outVal)) return "";
-                let h = Math.floor(mins / 60);
-                let m = mins % 60;
-                return h + ":" + m.toString().padStart(2, '0');
-            };
-
-            let newTotal = "";
-            let newThird = thirdVal; 
-            
-            if (inVal && outVal && outVal.toLowerCase() !== "missed") {
-                let inM = parseTime(inVal);
-                let outM = parseTime(outVal);
-                
-                let diff = Math.max(0, outM - inM);
-                
-                if (isSignifi) {
-                    if (isHourly) {
-                        newTotal = formatTime(diff);
-                        newThird = ""; 
-                    } else {
-                        if (diff >= 480) {
-                            newTotal = "Full Day";
-                            let ext = diff - 480;
-                            if (ext > 0) newThird = formatTime(ext);
-                            else newThird = "";
-                        } else {
-                            newTotal = formatTime(diff);
-                            newThird = "";
-                        }
-                    }
-                } else {
-                    if (diff > 240 && thirdVal === "") {
-                        newThird = "0:45";
-                    }
-                    let bM = parseTime(newThird);
-                    newTotal = formatTime(Math.max(0, diff - bM));
-                }
-            }
-
-            let currentTotal = totalInput.value.trim().toLowerCase();
-            let hasLeaveText = (currentTotal.includes('vacation') || currentTotal.includes('sick') || currentTotal.includes('paid lieu') || currentTotal.includes('off') || currentTotal.includes('stat holiday') || currentTotal.includes('full day'));
-            
-            if (!hasLeaveText || (inVal && outVal && outVal.toLowerCase() !== "missed")) {
-                if (newTotal !== "") {
-                    totalInput.value = newTotal;
-                } else if (!hasLeaveText) {
-                    if (currentTotal !== '0' && currentTotal !== '0:00') {
-                        totalInput.value = "";
-                    }
-                }
-            }
-            
-            if (totalInput.value.trim().toLowerCase() === 'off') {
-                totalInput.style.color = 'red';
-            } else {
-                totalInput.style.color = 'inherit';
-            }
-            
-            if (newThird !== thirdVal) {
-                breakInput.value = newThird;
-            }
-
-            // Update Aggregates
-            if (isSignifi) {
-                if (isHourly) {
-                    let totalMins = 0;
-                    let leavesList = [];
-                    for(let i=0; i<numCols; i++) {
-                        let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim().toLowerCase();
-                        if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                            totalMins += 480; 
-                            let origVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                            leavesList.push(origVal);
-                        } else if (!tVal.includes('off') && tVal !== "") {
-                            totalMins += parseTime(tVal);
-                        }
-                    }
-                    document.getElementById(`fulldays_${gIdx}_${eIdx}`).innerText = `${formatTime(totalMins)} Hours`;
-                    document.getElementById(`extrahrs_${gIdx}_${eIdx}`).innerText = ""; 
-                    
-                    let leaveSummary = {};
-                    leavesList.forEach(l => {
-                        let key = l.split('-')[0];
-                        leaveSummary[key] = (leaveSummary[key] || 0) + 1;
-                    });
-                    document.getElementById(`leaves_${gIdx}_${eIdx}`).innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
-                } else {
-                    let fullDaysCount = 0;
-                    let extraHrsMins = 0;
-                    let leavesList = [];
-                    
-                    for(let i=0; i<numCols; i++) {
-                        let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim().toLowerCase();
-                        let extVal = document.getElementById(`break_${gIdx}_${eIdx}_${i}`).value.trim();
-                        
-                        if (tVal === "full day" || tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                            fullDaysCount++;
-                        }
-                        if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                            let origVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                            leavesList.push(origVal);
-                        }
-                        extraHrsMins += parseTime(extVal);
-                    }
-                    
-                    document.getElementById(`fulldays_${gIdx}_${eIdx}`).innerText = `${fullDaysCount} Days`;
-                    document.getElementById(`extrahrs_${gIdx}_${eIdx}`).innerText = formatTime(extraHrsMins) || "0:00";
-                    
-                    let leaveSummary = {};
-                    leavesList.forEach(l => {
-                        let key = l.split('-')[0];
-                        leaveSummary[key] = (leaveSummary[key] || 0) + 1;
-                    });
-                    document.getElementById(`leaves_${gIdx}_${eIdx}`).innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
+        function initSupabase() {
+            const statusDiv = document.getElementById('connection-status');
+            if (SUPABASE_URL && SUPABASE_KEY) {
+                try {
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    statusDiv.style.backgroundColor = '#28a745';
+                    statusDiv.title = 'Connected to Supabase';
+                    return true;
+                } catch (e) {
+                    console.error('Supabase Init Error:', e);
+                    statusDiv.style.backgroundColor = '#dc3545';
+                    statusDiv.title = 'Supabase Connection Failed';
+                    return false;
                 }
             } else {
-                let empTotal = 0;
-                for(let i=0; i<numCols; i++) {
-                    let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                    empTotal += parseTime(tVal);
-                }
-                document.getElementById(`emptotal_${gIdx}_${eIdx}`).innerText = formatTime(empTotal);
-            }
-
-            // Group Totals
-            if (isSignifi) {
-                let grpFullDays = 0;
-                let grpExtraHrs = 0;
-                let hasSalaried = false;
-                let hasHourly = false;
-                
-                document.querySelectorAll(`.group-fulldays-${gIdx}`).forEach(el => {
-                    let txt = el.innerText || "";
-                    if (txt.includes('Days')) {
-                        grpFullDays += parseInt(txt) || 0;
-                        hasSalaried = true;
-                    } else if (txt.includes('Hours')) {
-                        hasHourly = true;
-                    }
-                });
-                document.querySelectorAll(`.group-extrahrs-${gIdx}`).forEach(el => {
-                    let txt = el.innerText || "";
-                    grpExtraHrs += parseTime(txt);
-                });
-                
-                if(document.getElementById(`grouptotal_fulldays_${gIdx}`)) {
-                    if (hasSalaried && !hasHourly) {
-                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = `${grpFullDays} Days`;
-                    } else {
-                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = "-"; 
-                    }
-                }
-                if(document.getElementById(`grouptotal_extrahrs_${gIdx}`)) {
-                    document.getElementById(`grouptotal_extrahrs_${gIdx}`).innerText = formatTime(grpExtraHrs) || "";
-                }
-            } else {
-                let groupTotal = 0;
-                document.querySelectorAll(`.group-emptotal-${gIdx}`).forEach(el => {
-                    groupTotal += parseTime(el.innerText);
-                });
-                if(document.getElementById(`grouptotal_${gIdx}`)) document.getElementById(`grouptotal_${gIdx}`).innerText = formatTime(groupTotal);
-            }
-        };
-
-        // === AUTO PUNCH OUT MISSING SHIFTS AT 11:59 PM ===
-        function runDailyAutoPunchOut(currentDate) {
-            try {
-                const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-                
-                const employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-                const overrides = getLocal(STORAGE_KEYS.OVERRIDES, {});
-                const shifts = getLocal(STORAGE_KEYS.SHIFTS, []);
-
-                const allEmpIds = employees.filter(e => !e.isLaidOff).map(e => e.id);
-
-                const startOfDayMs = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime();
-                const endOfDayMs = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59, 999).getTime();
-
-                const todayShifts = shifts.filter(s => {
-                    const t = new Date(s.timestamp).getTime();
-                    return t >= startOfDayMs && t <= endOfDayMs;
-                });
-
-                let updatedShifts = [...shifts];
-                let updatedOverrides = { ...overrides };
-                let modified = false;
-
-                for (const empId of allEmpIds) {
-                    const empShifts = todayShifts.filter(s => s.employeeId === empId);
-
-                    if (empShifts.length === 0) {
-                        const docId = empId + "_" + dateStr;
-                        if (!updatedOverrides[docId]) {
-                            updatedOverrides[docId] = {
-                                empId: empId,
-                                date: dateStr,
-                                in: '0',
-                                out: '0',
-                                break: '0',
-                                total: '0'
-                            };
-                            modified = true;
-                        }
-                    } else {
-                        const lastPunch = empShifts[empShifts.length - 1];
-                        if (lastPunch && lastPunch.action === 'IN') {
-                            const autoOutTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 16, 55, 0, 0);
-                            if (autoOutTime.getTime() > new Date(lastPunch.timestamp).getTime()) {
-                                updatedShifts.push({
-                                    id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                                    employeeId: empId,
-                                    name: lastPunch.name,
-                                    action: 'OUT',
-                                    timestamp: autoOutTime.toISOString(),
-                                    type: lastPunch.type || 'Unknown',
-                                    department: lastPunch.department || 'Unknown',
-                                    isAuto: true
-                                });
-                                modified = true;
-                            }
-                        }
-                    }
-                }
-
-                if (modified) {
-                    setLocal(STORAGE_KEYS.SHIFTS, updatedShifts);
-                    setLocal(STORAGE_KEYS.OVERRIDES, updatedOverrides);
-                    console.log("Auto-punchout completed.");
-                }
-            } catch (error) {
-                console.error("Auto punch out failed: ", error);
+                statusDiv.style.backgroundColor = '#ffc107';
+                statusDiv.title = 'Supabase Config Required (Click Settings)';
+                return false;
             }
         }
 
-        // === KIOSK CLOCK & INPUT LOGIC ===
+        function saveSupabaseConfig() {
+            const url = document.getElementById('cfg-supabase-url').value.trim();
+            const key = document.getElementById('cfg-supabase-key').value.trim();
+            if (!url || !key) return alert('Please enter both Supabase URL and Anon Key.');
+
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            SUPABASE_URL = url;
+            SUPABASE_KEY = key;
+
+            if (initSupabase()) {
+                alert('Supabase credentials saved and connected successfully!');
+            } else {
+                alert('Saved, but failed to connect. Check credentials.');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initSupabase();
+            document.getElementById('cfg-supabase-url').value = SUPABASE_URL;
+            document.getElementById('cfg-supabase-key').value = SUPABASE_KEY;
+        });
+
+        // === KIOSK CLOCK ===
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: true });
             document.getElementById('date-display').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
-            if (now.getHours() === 23 && now.getMinutes() === 59 && now.getSeconds() === 0) {
-                runDailyAutoPunchOut(now);
-            }
         }, 1000);
 
         const manualInput = document.getElementById('manual-input');
@@ -935,1419 +384,470 @@
             }
         });
 
-        setInterval(() => {
-            const adminView = document.getElementById('admin-view');
-            const modals = document.querySelectorAll('.modal');
-            let isModalOpen = false;
-            modals.forEach(m => {
-                if (m.style.display === 'flex' || m.style.display === 'block') {
-                    isModalOpen = true;
-                }
-            });
-
-            if (adminView && adminView.style.display !== 'block' && !isModalOpen) {
-                if (document.activeElement !== manualInput) {
-                    manualInput.focus();
-                }
-            }
-        }, 500);
-
         let isProcessingPunch = false;
         let pendingBadgeId = null;
-        let pendingAction = null;
         let pendingEmpData = null;
 
         manualInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') initiatePunch();
         });
 
-        function initiatePunch() {
-            if (isProcessingPunch) return; 
+        // === PUNCH IN / SCAN ENGINE ===
+        async function initiatePunch() {
+            if (isProcessingPunch) return;
 
             const badgeId = manualInput.value.trim();
-            if(!badgeId) return;
+            if (!badgeId) return;
 
-            isProcessingPunch = true; 
-            manualInput.value = ''; 
+            isProcessingPunch = true;
+            manualInput.value = '';
 
             const statusDiv = document.getElementById('status-display');
             statusDiv.style.display = 'block';
             statusDiv.className = 'status-message';
             statusDiv.innerText = 'Checking Data...';
 
+            if (!supabaseClient) {
+                statusDiv.className = 'status-message error';
+                statusDiv.innerText = 'Supabase is not configured. Open Admin -> Settings to set credentials.';
+                setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 4000);
+                return;
+            }
+
             try {
-                const employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-                const emp = employees.find(e => e.id === badgeId);
-                
-                if (!emp) {
+                // Fetch employee from public.employees
+                const { data: empList, error } = await supabaseClient
+                    .from('employees')
+                    .select('*')
+                    .eq('employee_id', badgeId);
+
+                if (error) throw error;
+
+                if (!empList || empList.length === 0) {
                     statusDiv.className = 'status-message error';
-                    statusDiv.innerText = 'Badge not found. Please contact Admin.';
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                        isProcessingPunch = false; 
-                        manualInput.focus();
-                    }, 3000);
+                    statusDiv.innerText = `Badge ID "${badgeId}" not found in employee records.`;
+                    setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 3000);
                     return;
                 }
-                
+
+                const emp = empList[0];
+                if (emp.active === false) {
+                    statusDiv.className = 'status-message error';
+                    statusDiv.innerText = `Employee "${emp.full_name}" is currently inactive.`;
+                    setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 3000);
+                    return;
+                }
+
                 pendingEmpData = emp;
-                if(pendingEmpData.isLaidOff) {
-                    statusDiv.className = 'status-message error';
-                    statusDiv.innerText = 'Badge inactive. Please contact Admin.';
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                        isProcessingPunch = false; 
-                        manualInput.focus();
-                    }, 3000);
-                    return;
-                }
-                
                 pendingBadgeId = badgeId;
 
-                const now = new Date();
-                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                const startOfDayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                
-                const shifts = getLocal(STORAGE_KEYS.SHIFTS, []);
-                const todayShifts = shifts.filter(s => s.employeeId === badgeId && new Date(s.timestamp).getTime() >= startOfDayMs);
-
-                let latestRawTime = 0;
-                let lastRawAction = null;
-                let rawIn = false;
-                let rawOut = false;
-
-                if (todayShifts.length > 0) {
-                    todayShifts.forEach(data => {
-                        const timeMs = new Date(data.timestamp).getTime();
-                        if (timeMs > latestRawTime) {
-                            latestRawTime = timeMs;
-                            lastRawAction = data.action;
-                        }
-                        if (data.action === 'IN') rawIn = true;
-                        if (data.action === 'OUT') rawOut = true;
-                    });
-
-                    if (latestRawTime > 0) {
-                        const diffMs = Date.now() - latestRawTime;
-                        const tenMinutesMs = 10 * 60 * 1000;
-                        if (diffMs < tenMinutesMs && diffMs > -tenMinutesMs) {
-                            const lastPunchTimeFormatted = new Date(latestRawTime).toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: '2-digit' });
-                            const actionWord = lastRawAction === 'IN' ? 'punched IN' : 'punched OUT';
-
-                            statusDiv.style.display = 'block';
-                            statusDiv.className = 'status-message error';
-                            statusDiv.innerHTML = `You have already ${actionWord} at <strong>${lastPunchTimeFormatted}</strong>.<br>Please wait 10 minutes before tapping again.`;
-
-                            setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 5000);
-                            return; 
-                        }
-                    }
-                }
-
-                const overrides = getLocal(STORAGE_KEYS.OVERRIDES, {});
-                const override = overrides[`${badgeId}_${todayStr}`] || null;
-
-                let effIn = rawIn ? "System IN" : "";
-                let effOut = rawOut ? "System OUT" : (rawIn && !rawOut ? "Missed" : "");
-
-                if (override) {
-                    if (override.in !== undefined) effIn = override.in;
-                    if (override.out !== undefined) effOut = override.out;
-                }
-
-                pendingAction = 'IN'; 
-                if (effIn && effIn !== "0" && effIn !== "0:00" && (!effOut || effOut.toLowerCase() === 'missed')) {
-                    pendingAction = 'OUT';
-                }
-
-                statusDiv.style.display = 'none'; 
-                document.getElementById('confirm-title').innerText = pendingAction === 'IN' ? 'Punch In' : 'Punch Out';
-                document.getElementById('confirm-title').style.color = pendingAction === 'IN' ? '#28a745' : '#007bff';
-                document.getElementById('confirm-text').innerHTML = `Hello <strong>${pendingEmpData.name}</strong>!<br>Are you ready to punch <strong>${pendingAction}</strong>?`;
+                statusDiv.style.display = 'none';
+                document.getElementById('confirm-title').innerText = 'Confirm Punch';
+                document.getElementById('confirm-text').innerHTML = `Hello <strong>${emp.full_name}</strong>!<br>Register scan for Badge ID: <strong>${badgeId}</strong>?`;
                 document.getElementById('confirm-modal').style.display = 'flex';
                 document.getElementById('confirm-btn').focus();
 
             } catch (err) {
                 console.error(err);
                 statusDiv.className = 'status-message error';
-                statusDiv.innerText = 'Error: ' + err.message;
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                    isProcessingPunch = false; 
-                    manualInput.focus();
-                }, 5000);
+                statusDiv.innerText = 'Error querying Supabase: ' + err.message;
+                setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 4000);
             }
         }
 
-        function executePunch() {
+        async function executePunch() {
             document.getElementById('confirm-modal').style.display = 'none';
             manualInput.focus();
             const statusDiv = document.getElementById('status-display');
-            
+
             try {
-                const shifts = getLocal(STORAGE_KEYS.SHIFTS, []);
-                shifts.push({
-                    id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                    employeeId: pendingBadgeId,
-                    name: pendingEmpData.name,
-                    action: pendingAction,
-                    timestamp: new Date().toISOString(),
-                    type: pendingEmpData.type,
-                    department: pendingEmpData.department
-                });
-                setLocal(STORAGE_KEYS.SHIFTS, shifts);
+                // Insert scan record into public.scan_logs
+                const { error } = await supabaseClient
+                    .from('scan_logs')
+                    .insert([{
+                        employee_id: pendingBadgeId,
+                        barcode: pendingBadgeId,
+                        scanned_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
 
                 statusDiv.style.display = 'block';
                 statusDiv.className = 'status-message success';
-                statusDiv.innerText = pendingAction === 'IN' ? `Welcome, ${pendingEmpData.name}! Shift Started.` : `Goodbye, ${pendingEmpData.name}! Shift Ended.`;
-                
+                statusDiv.innerText = `Successfully recorded scan for ${pendingEmpData.full_name}!`;
+
                 setTimeout(() => {
                     statusDiv.style.display = 'none';
-                    isProcessingPunch = false; 
+                    isProcessingPunch = false;
                     manualInput.focus();
-                }, 3500);
+                }, 3000);
 
             } catch (err) {
                 console.error(err);
                 statusDiv.style.display = 'block';
                 statusDiv.className = 'status-message error';
-                statusDiv.innerText = "Error saving punch. " + err.message;
-                isProcessingPunch = false; 
+                statusDiv.innerText = 'Error inserting scan log: ' + err.message;
+                isProcessingPunch = false;
                 manualInput.focus();
             }
         }
 
-        // === AUTHENTICATION & LOGIN LOGIC ===
-        let currentAdminId = null;
-        let currentAdminRole = null;
-
+        // === ADMIN MODAL & TAB CONTROL ===
         function showLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
-            document.getElementById('admin-password').value = '';
             document.getElementById('admin-password').focus();
         }
 
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
-            if(id === 'confirm-modal') {
-                isProcessingPunch = false; 
-                manualInput.focus();
-            }
-            if(id === 'login-modal') manualInput.focus();
+            if (id === 'confirm-modal') { isProcessingPunch = false; manualInput.focus(); }
+            if (id === 'login-modal') manualInput.focus();
         }
 
         function handleLoginEnter(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); 
-                verifyLogin();
-            }
-        }
-
-        function grantAccess(role, docId) {
-            currentAdminRole = role;
-            currentAdminId = docId;
-            
-            document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('admin-view').style.display = 'block';
-            
-            if (role === 'Super Admin') {
-                document.getElementById('super-admin-section').style.display = 'block';
-                loadAdminUsers();
-            } else {
-                document.getElementById('super-admin-section').style.display = 'none';
-            }
-            
-            switchTab('employees');
+            if (e.key === 'Enter') verifyLogin();
         }
 
         function verifyLogin() {
             const user = document.getElementById('admin-username').value.trim();
             const pass = document.getElementById('admin-password').value.trim();
-            
-            if (!user || !pass) return alert('Enter both username and password.');
 
-            const admins = getLocal(STORAGE_KEYS.ADMINS, []);
-            const admin = admins.find(a => a.username === user);
-            
-            if (admin && admin.password === pass) {
-                grantAccess(admin.role, admin.id);
-            } else if (admins.length === 0) {
-                const newAdmin = { id: 'admin_' + Date.now(), username: user, password: pass, role: 'Super Admin' };
-                setLocal(STORAGE_KEYS.ADMINS, [newAdmin]);
-                grantAccess('Super Admin', newAdmin.id);
-                alert("Initial Super Admin account created successfully!");
+            if (user === 'admin' && (pass === 'password123' || pass === 'admin')) {
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('admin-view').style.display = 'block';
+                switchTab('employees');
             } else {
-                alert("Invalid Username or Password.");
+                alert('Invalid password. Default password is password123');
             }
         }
 
         function exitAdmin() {
             document.getElementById('admin-view').style.display = 'none';
-            currentAdminId = null;
-            currentAdminRole = null;
             manualInput.focus();
         }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.admin-header button').forEach(el => el.classList.remove('active'));
-            
+
             document.getElementById(tabId).classList.add('active');
             if (event && event.target && event.target.tagName === 'BUTTON') {
                 event.target.classList.add('active');
             }
-            
+
             if (tabId === 'employees') loadEmployees();
             if (tabId === 'history') loadHistory();
-            if (tabId === 'settings' && currentAdminRole === 'Super Admin') loadAdminUsers();
             if (tabId === 'reports') {
-                if(!document.getElementById('report-start').value) {
-                    let d = new Date();
-                    let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
-                    d.setDate(diff);
-                    
-                    const startYear = d.getFullYear();
-                    const startMonth = String(d.getMonth() + 1).padStart(2, '0');
-                    const startDay = String(d.getDate()).padStart(2, '0');
-                    document.getElementById('report-start').value = `${startYear}-${startMonth}-${startDay}`;
-                    
-                    let endD = new Date(d);
-                    endD.setDate(endD.getDate() + 6);
-                    
-                    const endYear = endD.getFullYear();
-                    const endMonth = String(endD.getMonth() + 1).padStart(2, '0');
-                    const endDay = String(endD.getDate()).padStart(2, '0');
-                    document.getElementById('report-end').value = `${endYear}-${endMonth}-${endDay}`;
+                if (!document.getElementById('report-start').value) {
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('report-start').value = today;
+                    document.getElementById('report-end').value = today;
                 }
                 generateReport();
             }
-            if (tabId === 'signifi-report') {
-                if(!document.getElementById('summary-start').value) {
-                    let d = new Date();
-                    let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
-                    d.setDate(diff);
-                    
-                    const startYear = d.getFullYear();
-                    const startMonth = String(d.getMonth() + 1).padStart(2, '0');
-                    const startDay = String(d.getDate()).padStart(2, '0');
-                    document.getElementById('summary-start').value = `${startYear}-${startMonth}-${startDay}`;
-                    
-                    let endD = new Date(d);
-                    endD.setDate(endD.getDate() + 6);
-                    
-                    const endYear = endD.getFullYear();
-                    const endMonth = String(endD.getMonth() + 1).padStart(2, '0');
-                    const endDay = String(endD.getDate()).padStart(2, '0');
-                    document.getElementById('summary-end').value = `${endYear}-${endMonth}-${endDay}`;
-                }
-                generateSignifiSummary();
-            }
         }
 
-        // === USER MANAGEMENT (SETTINGS TAB) ===
-        function changeMyPassword() {
-            const newPass = document.getElementById('new-my-password').value.trim();
-            if (!newPass) return alert("Please enter a new password.");
+        // === EMPLOYEE MANAGEMENT ===
+        let viewingLaidOff = false;
 
-            let admins = getLocal(STORAGE_KEYS.ADMINS, []);
-            let idx = admins.findIndex(a => a.id === currentAdminId);
-            if (idx !== -1) {
-                admins[idx].password = newPass;
-                setLocal(STORAGE_KEYS.ADMINS, admins);
-                alert("Password successfully updated!");
-                document.getElementById('new-my-password').value = '';
-            } else {
-                alert("User session error.");
-            }
+        function toggleLaidOffView() {
+            viewingLaidOff = !viewingLaidOff;
+            const btn = document.getElementById('view-laidoff-btn');
+            btn.innerText = viewingLaidOff ? 'View Active' : 'View Inactive';
+            btn.style.backgroundColor = viewingLaidOff ? '#28a745' : '#6c757d';
+            loadEmployees();
         }
 
-        function loadAdminUsers() {
-            const tbody = document.getElementById('admin-list-body');
-            const admins = getLocal(STORAGE_KEYS.ADMINS, []);
-            tbody.innerHTML = '';
-            if (admins.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No admins found</td></tr>';
+        async function loadEmployees() {
+            const tbody = document.getElementById('employee-list-body');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading from Supabase...</td></tr>';
+
+            if (!supabaseClient) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Supabase client not initialized. Configure in Settings.</td></tr>';
                 return;
             }
-            admins.forEach(data => {
-                tbody.innerHTML += `<tr>
-                    <td style="font-weight:bold;">${data.username}</td>
-                    <td>${data.role}</td>
-                    <td style="text-align:center;">
-                        <button class="small-btn btn-delete" onclick="deleteAdmin('${data.id}', '${data.username}')">Delete</button>
-                    </td>
-                </tr>`;
-            });
-        }
 
-        function openAddAdminModal() {
-            document.getElementById('new-admin-user').value = '';
-            document.getElementById('new-admin-pass').value = '';
-            document.getElementById('add-admin-modal').style.display = 'flex';
-        }
+            try {
+                const { data: employees, error } = await supabaseClient
+                    .from('employees')
+                    .select('*')
+                    .order('full_name', { ascending: true });
 
-        function saveNewAdmin() {
-            const u = document.getElementById('new-admin-user').value.trim();
-            const p = document.getElementById('new-admin-pass').value.trim();
-            const r = document.getElementById('new-admin-role').value;
-            if (!u || !p) return alert("Please fill all fields");
+                if (error) throw error;
 
-            let admins = getLocal(STORAGE_KEYS.ADMINS, []);
-            if (admins.some(a => a.username === u)) {
-                return alert(`Admin user "${u}" already exists.`);
-            }
-            admins.push({ id: 'admin_' + Date.now(), username: u, password: p, role: r });
-            setLocal(STORAGE_KEYS.ADMINS, admins);
-            closeModal('add-admin-modal');
-            loadAdminUsers();
-        }
+                const filtered = (employees || []).filter(e => viewingLaidOff ? e.active === false : e.active !== false);
+                document.getElementById('total-emp-count').innerText = filtered.length;
 
-        function deleteAdmin(id, name) {
-            if (id === currentAdminId) return alert("You cannot delete your own account while you are logged in.");
-            if (confirm(`ACCIDENTAL ERASE PROTECTION:\nAre you sure you want to revoke admin access for user "${name}"?`)) {
-                let admins = getLocal(STORAGE_KEYS.ADMINS, []);
-                admins = admins.filter(a => a.id !== id);
-                setLocal(STORAGE_KEYS.ADMINS, admins);
-                loadAdminUsers();
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No ${viewingLaidOff ? 'inactive' : 'active'} employees found.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                filtered.forEach((emp, idx) => {
+                    const statusText = emp.active !== false ? '<span style="color:green; font-weight:bold;">Active</span>' : '<span style="color:red; font-weight:bold;">Inactive</span>';
+                    const toggleText = emp.active !== false ? 'Deactivate' : 'Activate';
+                    const toggleColor = emp.active !== false ? '#fd7e14' : '#28a745';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${idx + 1}</strong></td>
+                            <td><strong>${emp.employee_id}</strong></td>
+                            <td>${emp.full_name}</td>
+                            <td>${emp.department || 'General'}</td>
+                            <td>${statusText}</td>
+                            <td>${emp.created_at ? new Date(emp.created_at).toLocaleDateString() : '-'}</td>
+                            <td style="text-align:center;">
+                                <button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', '${(emp.department||'').replace(/'/g, "\\'")}')">Print</button>
+                                <button class="small-btn btn-edit" onclick="openEmployeeModal(${JSON.stringify(emp).replace(/"/g, '&quot;')})">Edit</button>
+                                <button class="small-btn" style="background-color: ${toggleColor};" onclick="toggleEmployeeStatus('${emp.employee_id}', ${emp.active !== false})">${toggleText}</button>
+                                <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
         function toggleDeptCustom() {
-            document.getElementById('emp-dept-custom').style.display = 
+            document.getElementById('emp-dept-custom').style.display =
                 document.getElementById('emp-dept-select').value === 'custom' ? 'block' : 'none';
         }
 
-        function toggleTypeCustom() {
-            const selectVal = document.getElementById('emp-type-select').value;
-            document.getElementById('emp-type-custom').style.display = 
-                selectVal === 'custom' ? 'block' : 'none';
-            
-            const signifiFields = document.getElementById('signifi-only-fields');
-            if(signifiFields) {
-                signifiFields.style.display = selectVal === 'Signifi' ? 'block' : 'none';
-            }
-        }
-
-        // === EMPLOYEE MANAGEMENT DIRECTORY ===
-        window.toggleLaidOffView = function() {
-            viewingLaidOff = !viewingLaidOff;
-            const btn = document.getElementById('view-laidoff-btn');
-            if (viewingLaidOff) {
-                btn.innerText = "View Active Employees";
-                btn.style.backgroundColor = "#28a745";
-            } else {
-                btn.innerText = "View Laid Off";
-                btn.style.backgroundColor = "#6c757d";
-            }
-            loadEmployees();
-        };
-
-        window.toggleEmployeeLayOff = function(badgeId, name, currentlyLaidOff) {
-            const actionText = currentlyLaidOff ? "RESTORE" : "LAY OFF";
-            if(confirm(`Are you sure you want to ${actionText} employee "${name}"?`)) {
-                let employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-                let emp = employees.find(e => e.id === badgeId);
-                if (emp) {
-                    emp.isLaidOff = !currentlyLaidOff;
-                    setLocal(STORAGE_KEYS.EMPLOYEES, employees);
-                    loadEmployees();
-                }
-            }
-        };
-
-        function setEmployeeAgencyFilter(filterType) {
-            currentEmpAgencyFilter = filterType;
-            loadEmployees();
-        }
-
-        function setEmployeeDeptFilter(dept) {
-            currentEmpDeptFilter = dept;
-            loadEmployees();
-        }
-
-        function loadEmployees() {
-            const tbody = document.getElementById('employee-list-body');
-            const agencyTabs = document.getElementById('dynamic-emp-agency-tabs');
-            const deptTabs = document.getElementById('dynamic-emp-dept-tabs');
-            const sortVal = document.getElementById('emp-sort') ? document.getElementById('emp-sort').value : 'name_asc';
-            
-            const employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-            tbody.innerHTML = '';
-            
-            if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No employees found. Add one above!</td></tr>';
-                document.getElementById('total-emp-count').innerText = "0";
-                return;
-            }
-
-            const agencies = new Set();
-            const depts = new Set();
-            let totalActiveCount = 0;
-
-            employees.forEach(emp => {
-                const isLaidOff = emp.isLaidOff === true;
-                if (!isLaidOff) totalActiveCount++;
-
-                if (viewingLaidOff && isLaidOff) {
-                    if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
-                    depts.add(emp.department ? emp.department.trim() : 'General');
-                } else if (!viewingLaidOff && !isLaidOff) {
-                    if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
-                    depts.add(emp.department ? emp.department.trim() : 'General');
-                }
-            });
-
-            document.getElementById('total-emp-count').innerText = totalActiveCount;
-
-            let agencyHtml = `<button class="filter-btn ${currentEmpAgencyFilter === 'All' ? 'active' : ''}" onclick="setEmployeeAgencyFilter('All')">All</button>
-                              <button class="filter-btn ${currentEmpAgencyFilter === 'Signifi' ? 'active' : ''}" onclick="setEmployeeAgencyFilter('Signifi')">Signifi</button>`;
-            Array.from(agencies).sort().forEach(agency => {
-                const safeAgencyName = agency.replace(/'/g, "\\'");
-                agencyHtml += `<button class="filter-btn ${currentEmpAgencyFilter === agency ? 'active' : ''}" onclick="setEmployeeAgencyFilter('${safeAgencyName}')">${agency}</button>`;
-            });
-            agencyTabs.innerHTML = agencyHtml;
-
-            let deptHtml = `<button class="filter-btn ${currentEmpDeptFilter === 'All' ? 'active' : ''}" onclick="setEmployeeDeptFilter('All')">All</button>`;
-            Array.from(depts).sort().forEach(dept => {
-                const safeDept = dept.replace(/'/g, "\\'");
-                deptHtml += `<button class="filter-btn ${currentEmpDeptFilter === dept ? 'active' : ''}" onclick="setEmployeeDeptFilter('${safeDept}')">${dept}</button>`;
-            });
-            deptTabs.innerHTML = deptHtml;
-
-            const renderEmployeeRow = (emp, sNo) => {
-                const safeEmpJson = JSON.stringify(emp).replace(/"/g, '&quot;');
-                let displayAgency = (emp.type === 'Agency') ? (emp.agencyName || 'Unnamed Agency') : '-';
-                let displayPay = (emp.type === 'Signifi') ? (emp.payType || 'Salaried') : '-';
-                
-                let displayVac = (emp.type === 'Signifi') ? `${(emp.vacationTotal || 0) - (emp.vacationUsed || 0)} / ${emp.vacationTotal || 0}` : 'N/A';
-                let displaySick = (emp.type === 'Signifi') ? `${(emp.sickTotal || 0) - (emp.sickUsed || 0)} / ${emp.sickTotal || 0}` : 'N/A';
-                let displayLieu = (emp.type === 'Signifi') ? `${(emp.lieuTotal || 0) - (emp.lieuUsed || 0)} / ${emp.lieuTotal || 0}` : 'N/A';
-
-                let layOffBtn = emp.isLaidOff 
-                    ? `<button class="small-btn" style="background-color: #20c997;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', true)">Restore</button>`
-                    : `<button class="small-btn" style="background-color: #fd7e14;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', false)">Lay Off</button>`;
-
-                return `
-                    <tr>
-                        <td><strong>${sNo}</strong></td>
-                        <td><strong>${emp.id}</strong></td>
-                        <td>${emp.name}</td>
-                        <td>${emp.department} <br><small style="color:gray">${displayAgency}</small></td>
-                        <td>${displayPay}</td>
-                        <td>${displayVac}</td>
-                        <td>${displaySick}</td>
-                        <td>${displayLieu}</td>
-                        <td style="text-align:center;">
-                            <button class="small-btn btn-print" onclick="printBadge('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', '${emp.department.replace(/'/g, "\\'")}')">Print</button>
-                            <button class="small-btn btn-edit" onclick="openEmployeeModal(${safeEmpJson})">Edit</button>
-                            ${layOffBtn}
-                            <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.id}', '${emp.name.replace(/'/g, "\\'")}')">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            };
-
-            let empList = [];
-
-            employees.forEach(emp => {
-                const empAgency = emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency';
-                const empDept = emp.department ? emp.department.trim() : 'General';
-                const isLaidOff = emp.isLaidOff === true;
-
-                if (viewingLaidOff && !isLaidOff) return;
-                if (!viewingLaidOff && isLaidOff) return;
-                
-                let showAgency = false;
-                if (currentEmpAgencyFilter === 'All') showAgency = true;
-                else if (currentEmpAgencyFilter === 'Signifi' && emp.type === 'Signifi') showAgency = true;
-                else if (emp.type === 'Agency' && empAgency === currentEmpAgencyFilter) showAgency = true;
-
-                let showDept = false;
-                if (currentEmpDeptFilter === 'All') showDept = true;
-                else if (empDept === currentEmpDeptFilter) showDept = true;
-
-                if (showAgency && showDept) {
-                    empList.push(emp);
-                }
-            });
-
-            empList.sort((a, b) => {
-                if (sortVal === 'name_asc') {
-                    return (a.name || '').localeCompare(b.name || '');
-                } else if (sortVal === 'name_desc') {
-                    return (b.name || '').localeCompare(a.name || '');
-                } else if (sortVal === 'newest') {
-                    return (b.createdAt || 0) - (a.createdAt || 0);
-                } else if (sortVal === 'oldest') {
-                    return (a.createdAt || 0) - (b.createdAt || 0);
-                }
-                return 0;
-            });
-
-            empList.forEach((emp, idx) => {
-                tbody.innerHTML += renderEmployeeRow(emp, idx + 1);
-            });
-
-            if (empList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No employees found for this category.</td></tr>`;
-            }
-        }
-
         function openEmployeeModal(empData = null) {
-            const modal = document.getElementById('employee-modal');
-            const title = document.getElementById('emp-modal-title');
-            const saveBtn = document.getElementById('save-emp-btn');
-            
             document.getElementById('emp-original-id').value = '';
-            document.getElementById('emp-created-at').value = '';
             document.getElementById('emp-id').value = '';
             document.getElementById('emp-name').value = '';
             document.getElementById('emp-dept-select').value = 'Production';
             document.getElementById('emp-dept-custom').value = '';
-            document.getElementById('emp-type-select').value = 'Signifi';
-            document.getElementById('emp-type-custom').value = '';
-            document.getElementById('emp-pay-type').value = 'Salaried';
-            
-            document.getElementById('emp-vacation-total').value = '10';
-            document.getElementById('emp-vacation-used').value = '0';
-            document.getElementById('emp-sick-total').value = '5';
-            document.getElementById('emp-sick-used').value = '0';
-            document.getElementById('emp-lieu-total').value = '0';
-            document.getElementById('emp-lieu-used').value = '0';
-            
             toggleDeptCustom();
-            toggleTypeCustom();
 
             if (empData) {
-                title.innerText = "Edit Employee Information";
-                saveBtn.innerText = "Update Employee";
-                document.getElementById('emp-original-id').value = empData.id;
-                document.getElementById('emp-created-at').value = empData.createdAt || '';
-                document.getElementById('emp-id').value = empData.id;
-                document.getElementById('emp-name').value = empData.name;
-                document.getElementById('emp-pay-type').value = empData.payType || 'Salaried';
-                
-                if (empData.vacationTotal !== undefined) document.getElementById('emp-vacation-total').value = empData.vacationTotal;
-                if (empData.vacationUsed !== undefined) document.getElementById('emp-vacation-used').value = empData.vacationUsed;
-                if (empData.sickTotal !== undefined) document.getElementById('emp-sick-total').value = empData.sickTotal;
-                if (empData.sickUsed !== undefined) document.getElementById('emp-sick-used').value = empData.sickUsed;
-                if (empData.lieuTotal !== undefined) document.getElementById('emp-lieu-total').value = empData.lieuTotal;
-                if (empData.lieuUsed !== undefined) document.getElementById('emp-lieu-used').value = empData.lieuUsed;
+                document.getElementById('emp-modal-title').innerText = 'Edit Employee';
+                document.getElementById('emp-original-id').value = empData.employee_id;
+                document.getElementById('emp-id').value = empData.employee_id;
+                document.getElementById('emp-name').value = empData.full_name;
 
-                const predefinedDepts = ['Production', 'Inventory', 'Quality'];
-                if (predefinedDepts.includes(empData.department)) {
+                const predefined = ['Production', 'Inventory', 'Quality'];
+                if (predefined.includes(empData.department)) {
                     document.getElementById('emp-dept-select').value = empData.department;
                 } else {
                     document.getElementById('emp-dept-select').value = 'custom';
-                    document.getElementById('emp-dept-custom').value = empData.department;
+                    document.getElementById('emp-dept-custom').value = empData.department || '';
+                    toggleDeptCustom();
                 }
-                
-                if (empData.type === 'Signifi') {
-                    document.getElementById('emp-type-select').value = 'Signifi';
-                } else {
-                    const predefinedAgencies = ['T-DOT', 'Carrier Club'];
-                    if (predefinedAgencies.includes(empData.agencyName)) {
-                        document.getElementById('emp-type-select').value = empData.agencyName;
-                    } else {
-                        document.getElementById('emp-type-select').value = 'custom';
-                        document.getElementById('emp-type-custom').value = empData.agencyName;
-                    }
-                }
-                
-                toggleDeptCustom();
-                toggleTypeCustom();
             } else {
-                title.innerText = "Add New Employee";
-                saveBtn.innerText = "Save & Generate Badge";
+                document.getElementById('emp-modal-title').innerText = 'Add New Employee';
             }
-            
-            modal.style.display = 'flex';
+
+            document.getElementById('employee-modal').style.display = 'flex';
         }
 
-        function saveEmployee() {
-            const originalId = document.getElementById('emp-original-id').value; 
-            const requestedId = document.getElementById('emp-id').value.trim(); 
-            const name = document.getElementById('emp-name').value.trim();
-            let payType = document.getElementById('emp-pay-type').value;
-            let createdAtVal = document.getElementById('emp-created-at').value;
-            
-            if (!name) { alert("Please enter the employee's Full Name."); return; }
+        async function saveEmployee() {
+            const requestedId = document.getElementById('emp-id').value.trim();
+            const fullName = document.getElementById('emp-name').value.trim();
+
+            if (!fullName) return alert('Please enter Full Name.');
 
             let dept = document.getElementById('emp-dept-select').value;
             if (dept === 'custom') {
-                dept = document.getElementById('emp-dept-custom').value.trim();
-                if(!dept) dept = 'General';
+                dept = document.getElementById('emp-dept-custom').value.trim() || 'General';
             }
 
-            let typeSelection = document.getElementById('emp-type-select').value;
-            if (typeSelection === 'custom') {
-                typeSelection = document.getElementById('emp-type-custom').value.trim();
-            }
-            
-            let type = 'Agency';
-            let agency = typeSelection;
+            const empId = requestedId || Math.floor(100000 + Math.random() * 900000).toString();
 
-            if (typeSelection.toLowerCase() === 'signifi') {
-                type = 'Signifi';
-                agency = '';
-            } else if (!typeSelection) {
-                alert("Please specify the Agency name."); 
-                return;
-            }
+            try {
+                const { error } = await supabaseClient
+                    .from('employees')
+                    .upsert({
+                        employee_id: empId,
+                        full_name: fullName,
+                        department: dept,
+                        active: true
+                    }, { onConflict: 'employee_id' });
 
-            let vacTotal = parseInt(document.getElementById('emp-vacation-total').value) || 0;
-            let vacUsed = parseInt(document.getElementById('emp-vacation-used').value) || 0;
-            let sickTot = parseInt(document.getElementById('emp-sick-total').value) || 0;
-            let sickUsd = parseInt(document.getElementById('emp-sick-used').value) || 0;
-            let lieuTot = parseInt(document.getElementById('emp-lieu-total').value) || 0;
-            let lieuUsd = parseInt(document.getElementById('emp-lieu-used').value) || 0;
+                if (error) throw error;
 
-            if (type !== 'Signifi') {
-                vacTotal = 0; vacUsed = 0;
-                sickTot = 0; sickUsd = 0;
-                lieuTot = 0; lieuUsd = 0;
-                payType = 'Hourly'; 
-            }
+                closeModal('employee-modal');
+                loadEmployees();
+                alert(`Employee ${fullName} saved!`);
 
-            const badgeId = requestedId ? requestedId : Math.floor(100000 + Math.random() * 900000).toString();
-            const isNew = !originalId;
-            let empCreatedAt = createdAtVal ? parseInt(createdAtVal) : Date.now();
-
-            let employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-
-            if (isNew || originalId !== badgeId) {
-                if (employees.some(e => e.id === badgeId)) {
-                    alert(`OVERWRITE PREVENTED: Badge ID "${badgeId}" is already assigned to another employee. Please use a unique Badge ID.`);
-                    return;
-                }
-            }
-
-            if (!isNew && originalId !== badgeId) {
-                employees = employees.filter(e => e.id !== originalId);
-            }
-
-            const empObj = {
-                id: badgeId,
-                name: name,
-                department: dept,
-                type: type,
-                payType: payType,
-                agencyName: agency,
-                vacationTotal: vacTotal,
-                vacationUsed: vacUsed,
-                sickTotal: sickTot,
-                sickUsed: sickUsd,
-                lieuTotal: lieuTot,
-                lieuUsed: lieuUsd,
-                createdAt: empCreatedAt,
-                isLaidOff: false
-            };
-
-            const existingIdx = employees.findIndex(e => e.id === badgeId);
-            if (existingIdx !== -1) {
-                employees[existingIdx] = empObj;
-            } else {
-                employees.push(empObj);
-            }
-
-            setLocal(STORAGE_KEYS.EMPLOYEES, employees);
-            closeModal('employee-modal');
-            loadEmployees(); 
-
-            if (isNew || originalId !== badgeId) {
-                printBadge(badgeId, name, dept);
-            } else {
-                alert("Employee information updated successfully!");
+            } catch (err) {
+                alert('Error saving employee: ' + err.message);
             }
         }
 
-        function deleteEmployee(badgeId, name) {
-            if(confirm(`ACCIDENTAL ERASE PROTECTION:\nAre you SURE you want to delete ${name} (Badge: ${badgeId})?\n\nThis action cannot be undone.`)) {
-                if(confirm(`Final confirmation: Permanently delete employee "${name}"?`)) {
-                    let employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-                    employees = employees.filter(e => e.id !== badgeId);
-                    setLocal(STORAGE_KEYS.EMPLOYEES, employees);
-                    loadEmployees(); 
-                }
+        async function toggleEmployeeStatus(empId, currentStatus) {
+            if (!confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this employee?`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('employees')
+                    .update({ active: !currentStatus })
+                    .eq('employee_id', empId);
+
+                if (error) throw error;
+                loadEmployees();
+            } catch (err) {
+                alert('Error updating status: ' + err.message);
+            }
+        }
+
+        async function deleteEmployee(empId, name) {
+            if (!confirm(`Permanently delete employee "${name}" (${empId})? This will also delete associated scan logs.`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('employees')
+                    .delete()
+                    .eq('employee_id', empId);
+
+                if (error) throw error;
+                loadEmployees();
+            } catch (err) {
+                alert('Error deleting employee: ' + err.message);
             }
         }
 
         function printBadge(badgeId, name, dept) {
-            document.getElementById('print-name').innerText = `${name} - ${dept}`;
-            JsBarcode("#barcode-svg", badgeId, {
-                format: "CODE128", width: 2, height: 100, displayValue: false
-            });
+            document.getElementById('print-name').innerText = `${name} (${dept})`;
+            JsBarcode("#barcode-svg", badgeId, { format: "CODE128", width: 2, height: 100, displayValue: true });
             document.getElementById('print-modal').style.display = 'flex';
         }
 
-        // === HISTORY VIEWER ===
-        function getWeekStart(dateObj) {
-            if (!dateObj) return 'N/A';
-            const d = new Date(dateObj);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            d.setDate(diff);
-            return "Week of " + d.toLocaleDateString();
-        }
-
-        function loadHistory() {
+        // === SCAN LOGS & HISTORY ===
+        async function loadHistory() {
             const tbody = document.getElementById('history-body');
-            const shifts = getLocal(STORAGE_KEYS.SHIFTS, []);
-            
-            globalHistoryData = shifts.map(s => {
-                const jsDate = new Date(s.timestamp);
-                return {
-                    ...s,
-                    jsDate: jsDate,
-                    timeStr: jsDate.toLocaleString()
-                };
-            }).sort((a, b) => b.jsDate - a.jsDate);
-            
-            renderHistoryTable();
-        }
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading scan logs...</td></tr>';
 
-        function renderHistoryTable() {
-            const dateFilter = document.getElementById("filter-history-date").value.toLowerCase();
-            const nameFilter = document.getElementById("filter-history-name").value.toLowerCase();
-            const actionFilter = document.getElementById("filter-history-action").value.toLowerCase();
-            const typeFilter = document.getElementById("filter-history-type").value.toLowerCase();
-            const groupBy = document.getElementById("history-group-select") ? document.getElementById("history-group-select").value : 'none';
-
-            const tbody = document.getElementById("history-body");
-            let html = '';
-
-            let filteredData = globalHistoryData.filter(d => {
-                const fDate = (d.timeStr || '').toLowerCase();
-                const fName = (d.name || '').toLowerCase();
-                const fAction = (d.action || '').toLowerCase();
-                const fType = (d.type || '').toLowerCase();
-
-                return fDate.includes(dateFilter) && 
-                       fName.includes(nameFilter) && 
-                       fAction.includes(actionFilter) && 
-                       fType.includes(typeFilter);
-            });
-
-            if (filteredData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records found.</td></tr>';
+            if (!supabaseClient) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Supabase client not initialized.</td></tr>';
                 return;
             }
 
-            if (groupBy === 'none') {
-                filteredData.forEach(data => {
-                    html += `<tr>
-                        <td>${data.timeStr}</td>
-                        <td>${data.name}</td>
-                        <td><b style="color:${data.action==='IN'?'green':'blue'}">${data.action}</b></td>
-                        <td>${data.type}</td>
-                    </tr>`;
-                });
-            } else {
-                const groups = {};
-                filteredData.forEach(data => {
-                    let key = 'Unknown';
-                    if (groupBy === 'day') {
-                        key = data.jsDate ? data.jsDate.toLocaleDateString() : 'N/A';
-                    } else if (groupBy === 'week') {
-                        key = getWeekStart(data.jsDate);
-                    } else if (groupBy === 'month') {
-                        key = data.jsDate ? data.jsDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A';
-                    } else if (groupBy === 'name') {
-                        key = data.name || 'Unknown';
-                    }
-                    
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(data);
-                });
-
-                for (const [groupName, items] of Object.entries(groups)) {
-                    html += `<tr style="background-color: #6c757d; color: white; font-weight: bold;">
-                        <td colspan="4" style="padding: 10px; font-size: 1.1rem; text-align: left;">${groupName.toUpperCase()} <span style="font-weight:normal; font-size: 0.9rem;">(${items.length} records)</span></td>
-                    </tr>`;
-                    items.forEach(data => {
-                        html += `<tr>
-                            <td>${data.timeStr}</td>
-                            <td>${data.name}</td>
-                            <td><b style="color:${data.action==='IN'?'green':'blue'}">${data.action}</b></td>
-                            <td>${data.type}</td>
-                        </tr>`;
-                    });
-                }
-            }
-
-            tbody.innerHTML = html;
-        }
-
-        function filterHistoryTable() {
-            renderHistoryTable();
-        }
-
-        // === CUSTOM RANGE TIMESHEET REPORT ===
-        function setReportFilter(filterType) {
-            currentReportFilter = filterType;
-            generateReport();
-        }
-
-        function toggleDeptFilter(dept) {
-            if (dept === 'All') {
-                currentDeptFilters = ['All'];
-            } else {
-                currentDeptFilters = currentDeptFilters.filter(d => d !== 'All');
-                if (currentDeptFilters.includes(dept)) {
-                    currentDeptFilters = currentDeptFilters.filter(d => d !== dept);
-                    if (currentDeptFilters.length === 0) currentDeptFilters = ['All'];
-                } else {
-                    currentDeptFilters.push(dept);
-                }
-            }
-            generateReport();
-        }
-
-        function renderDeptFilters() {
-            const container = document.getElementById('dynamic-dept-filter-tabs');
-            if (!container) return;
-            
-            let html = `<button class="filter-btn ${currentDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleDeptFilter('All')">All</button>`;
-            
-            availableDepartments.forEach(dept => {
-                const safeDept = dept.replace(/'/g, "\\'");
-                html += `<button class="filter-btn ${currentDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleDeptFilter('${safeDept}')">${dept}</button>`;
-            });
-            
-            container.innerHTML = html;
-        }
-
-        window.applyStatHoliday = function() {
-            const statDateStr = document.getElementById('stat-holiday-date').value;
-            if (!statDateStr) return alert("Please select a date for the Stat Holiday.");
-            
-            const totalInputs = document.querySelectorAll(`.total-input[data-date="${statDateStr}"]`);
-            if (totalInputs.length === 0) {
-                return alert("The selected date is not in the currently generated report.");
-            }
-            
-            if (!confirm(`Apply Stat Holiday rules to all employees for ${statDateStr}?\n\nSignifi = 8 Paid Hours\nAgencies = Off`)) return;
-            
-            totalInputs.forEach(input => {
-                const empType = input.dataset.emptype;
-                if (empType === 'Signifi') {
-                    input.value = "Stat Holiday";
-                } else if (empType === 'Agency') {
-                    input.value = "Off";
-                }
-                
-                input.dispatchEvent(new Event('change'));
-            });
-            
-            alert("Stat Holiday applied to the report! Click 'Save Changes' to permanently save.");
-        };
-
-        function saveReportChanges() {
-            const btn = document.getElementById('save-changes-btn');
-            btn.innerText = "Saving...";
-            
             try {
-                const timeInputs = document.querySelectorAll('.time-input');
-                const overrideMap = getLocal(STORAGE_KEYS.OVERRIDES, {});
-                const employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-                const empDeltas = {}; 
-                
-                timeInputs.forEach(input => {
-                    const empId = input.dataset.empid;
-                    const dateStr = input.dataset.date;
-                    const field = input.dataset.field;
-                    let val = input.value.trim();
-                    
-                    if (empId && dateStr && field) {
-                        let skipOverride = false;
-                        if (field === 'out' && val.toLowerCase() === 'missed') skipOverride = true;
-                        if (field === 'in' && val === '') skipOverride = true;
+                const { data: logs, error } = await supabaseClient
+                    .from('scan_logs')
+                    .select('id, employee_id, barcode, scanned_at, employees(full_name, department)')
+                    .order('scanned_at', { ascending: false })
+                    .limit(200);
 
-                        if (!skipOverride) {
-                            const docId = empId + "_" + dateStr;
-                            if (!overrideMap[docId]) {
-                                overrideMap[docId] = { empId: empId, date: dateStr };
-                            }
-                            overrideMap[docId][field] = val;
-                        }
+                if (error) throw error;
 
-                        if (field === 'total') {
-                            if (!empDeltas[empId]) empDeltas[empId] = { vac: 0, sick: 0, lieu: 0 };
-                            
-                            let oldVal = (input.dataset.original || "").toLowerCase();
-                            let newVal = val.toLowerCase();
-
-                            let oldIsVac = oldVal.includes('vacation');
-                            let oldIsSick = oldVal.includes('sick');
-                            let oldIsLieu = oldVal.includes('paid lieu');
-
-                            let newIsVac = newVal.includes('vacation');
-                            let newIsSick = newVal.includes('sick');
-                            let newIsLieu = newVal.includes('paid lieu');
-
-                            if (newIsVac && !oldIsVac) empDeltas[empId].vac++;
-                            if (!newIsVac && oldIsVac) empDeltas[empId].vac--;
-
-                            if (newIsSick && !oldIsSick) empDeltas[empId].sick++;
-                            if (!newIsSick && oldIsSick) empDeltas[empId].sick--;
-
-                            if (newIsLieu && !oldIsLieu) empDeltas[empId].lieu++;
-                            if (!newIsLieu && oldIsLieu) empDeltas[empId].lieu--;
-
-                            input.dataset.original = val;
-                        }
-                    }
-                });
-                
-                setLocal(STORAGE_KEYS.OVERRIDES, overrideMap);
-
-                for (let empId of Object.keys(empDeltas)) {
-                    let delta = empDeltas[empId];
-                    if (delta.vac !== 0 || delta.sick !== 0 || delta.lieu !== 0) {
-                        let emp = employees.find(e => e.id === empId);
-                        if (emp) {
-                            emp.vacationUsed = Math.max(0, (emp.vacationUsed || 0) + delta.vac);
-                            emp.sickUsed = Math.max(0, (emp.sickUsed || 0) + delta.sick);
-                            emp.lieuUsed = Math.max(0, (emp.lieuUsed || 0) + delta.lieu);
-                        }
-                    }
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No scan records found in database.</td></tr>';
+                    return;
                 }
-                setLocal(STORAGE_KEYS.EMPLOYEES, employees);
 
-                const noteInputs = document.querySelectorAll('.note-input');
-                const notesMap = getLocal(STORAGE_KEYS.NOTES, {});
-                noteInputs.forEach(input => {
-                    const empId = input.dataset.empid;
-                    if(empId) {
-                        notesMap[empId] = input.value;
-                    }
-                });
-                setLocal(STORAGE_KEYS.NOTES, notesMap);
+                tbody.innerHTML = '';
+                logs.forEach(log => {
+                    const empName = log.employees ? log.employees.full_name : 'N/A';
+                    const dept = log.employees ? log.employees.department : 'N/A';
+                    const scanTime = new Date(log.scanned_at).toLocaleString();
 
-                alert("Changes saved successfully!");
-                generateReport(); 
-                loadEmployees(); 
-            } catch(e) {
-                console.error(e);
-                alert("Error saving changes: " + e.message);
-            }
-            btn.innerText = "Save Changes";
-        }
-
-        function generateReport() {
-            const startStr = document.getElementById('report-start').value;
-            const endStr = document.getElementById('report-end').value;
-            const sortVal = document.getElementById('report-sort') ? document.getElementById('report-sort').value : 'name_asc';
-            
-            if (!startStr || !endStr) {
-                alert("Please select both a Start Date and End Date.");
-                return;
-            }
-            
-            const [sYear, sMonth, sDay] = startStr.split('-');
-            const startD = new Date(sYear, sMonth - 1, sDay);
-            
-            const [eYear, eMonth, eDay] = endStr.split('-');
-            const endD = new Date(eYear, eMonth - 1, eDay);
-            
-            if (endD < startD) {
-                alert("End date must be after start date.");
-                return;
-            }
-
-            const rangeDates = [];
-            let currentD = new Date(startD);
-            while (currentD <= endD) {
-                rangeDates.push(new Date(currentD));
-                currentD.setDate(currentD.getDate() + 1);
-            }
-
-            if (rangeDates.length > 31) {
-                alert("Please select a date range of 31 days or less.");
-                return;
-            }
-
-            const container = document.getElementById('report-container');
-            const filterTabsContainer = document.getElementById('dynamic-report-filter-tabs');
-
-            const employeesArr = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-            const shiftsArr = getLocal(STORAGE_KEYS.SHIFTS, []);
-            const overridesMap = getLocal(STORAGE_KEYS.OVERRIDES, {});
-            const notesMap = getLocal(STORAGE_KEYS.NOTES, {});
-
-            const reportAgencies = new Set();
-            const reportDepts = new Set();
-            
-            let activeEmps = employeesArr.filter(emp => !emp.isLaidOff);
-
-            activeEmps.forEach(emp => {
-                if (emp.type === 'Agency') {
-                    reportAgencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
-                }
-                reportDepts.add(emp.department ? emp.department.trim() : 'General');
-            });
-            
-            availableDepartments = Array.from(reportDepts).sort();
-            renderDeptFilters();
-
-            let tabsHtml = `<button class="filter-btn ${currentReportFilter === 'All' ? 'active' : ''}" onclick="setReportFilter('All')">All Reports</button>
-                            <button class="filter-btn ${currentReportFilter === 'Signifi' ? 'active' : ''}" onclick="setReportFilter('Signifi')">Signifi</button>`;
-            reportAgencies.forEach(agency => {
-                const safeAgencyName = agency.replace(/'/g, "\\'");
-                tabsHtml += `<button class="filter-btn ${currentReportFilter === agency ? 'active' : ''}" onclick="setReportFilter('${safeAgencyName}')">${agency}</button>`;
-            });
-            filterTabsContainer.innerHTML = tabsHtml;
-
-            // Grouping logic
-            let groups = {};
-            activeEmps.forEach(emp => {
-                let showAgency = false;
-                const empAgency = emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency';
-                const empDept = emp.department ? emp.department.trim() : 'General';
-
-                if (currentReportFilter === 'All') showAgency = true;
-                else if (currentReportFilter === 'Signifi' && emp.type === 'Signifi') showAgency = true;
-                else if (emp.type === 'Agency' && empAgency === currentReportFilter) showAgency = true;
-
-                let showDept = false;
-                if (currentDeptFilters.includes('All')) showDept = true;
-                else if (currentDeptFilters.includes(empDept)) showDept = true;
-
-                if (showAgency && showDept) {
-                    let groupKey = emp.type === 'Signifi' ? 'Signifi' : (emp.agencyName || 'Agency');
-                    if (!groups[groupKey]) groups[groupKey] = [];
-                    groups[groupKey].push(emp);
-                }
-            });
-
-            if (Object.keys(groups).length === 0) {
-                container.innerHTML = "<p>No active employees found matching the selected filters.</p>";
-                return;
-            }
-
-            let reportHtml = '';
-
-            Object.keys(groups).forEach((groupName, gIdx) => {
-                let empGroup = groups[groupName];
-                empGroup.sort((a, b) => {
-                    if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
-                    if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
-                    if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
-                    if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
-                    return 0;
-                });
-
-                const isSignifi = (groupName === 'Signifi');
-
-                reportHtml += `<h3 style="margin-top: 20px; text-transform: uppercase;">${groupName} Timesheet</h3>`;
-                reportHtml += `<table class="report-table">
-                    <thead>
+                    tbody.innerHTML += `
                         <tr>
-                            <th class="report-header-title" colspan="${rangeDates.length + 5}">${groupName.toUpperCase()}</th>
+                            <td>${scanTime}</td>
+                            <td><strong>${log.employee_id}</strong></td>
+                            <td>${empName}</td>
+                            <td>${dept}</td>
+                            <td><code>${log.barcode}</code></td>
                         </tr>
-                        <tr style="background-color: #d9d9d9;">
-                            <th style="min-width: 120px;">Name</th>
-                            <th style="width: 50px;">Detail</th>`;
-                
-                rangeDates.forEach(d => {
-                    const dayStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
-                    reportHtml += `<th style="min-width: 70px;">${dayStr}</th>`;
+                    `;
                 });
 
-                if (isSignifi) {
-                    reportHtml += `<th style="min-width: 90px;">Full Days</th>`;
-                    reportHtml += `<th style="min-width: 90px;">Extra Hrs</th>`;
-                    reportHtml += `<th style="min-width: 150px;">Leaves</th>`;
-                } else {
-                    reportHtml += `<th style="min-width: 100px;">Total Hours</th>`;
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        // === REPORTS GENERATION ===
+        async function generateReport() {
+            const container = document.getElementById('report-container');
+            const startVal = document.getElementById('report-start').value;
+            const endVal = document.getElementById('report-end').value;
+
+            if (!startVal || !endVal) {
+                container.innerHTML = '<p style="color:red;">Please select start and end dates.</p>';
+                return;
+            }
+
+            container.innerHTML = '<p>Fetching scan logs from Supabase...</p>';
+
+            try {
+                const startDate = new Date(startVal + 'T00:00:00Z').toISOString();
+                const endDate = new Date(endVal + 'T23:59:59Z').toISOString();
+
+                const { data: logs, error } = await supabaseClient
+                    .from('scan_logs')
+                    .select('id, employee_id, barcode, scanned_at, employees(full_name, department)')
+                    .gte('scanned_at', startDate)
+                    .lte('scanned_at', endDate)
+                    .order('scanned_at', { ascending: true });
+
+                if (error) throw error;
+
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = `<p>No scan logs found between ${startVal} and ${endVal}.</p>`;
+                    return;
                 }
-                reportHtml += `<th style="min-width: 150px;">Notes</th></tr></thead><tbody>`;
 
-                empGroup.forEach((emp, eIdx) => {
-                    const empNote = notesMap[emp.id] || "";
-                    
-                    let inCells = "", outCells = "", breakCells = "", totalCells = "";
-                    let fullDaysCount = 0, extraHrsMins = 0, totalWorkMins = 0;
-                    let leavesList = [];
-
-                    rangeDates.forEach((d, cIdx) => {
-                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                        const startOfDayMs = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                        const endOfDayMs = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime();
-
-                        const empShifts = shiftsArr.filter(s => s.employeeId === emp.id && new Date(s.timestamp).getTime() >= startOfDayMs && new Date(s.timestamp).getTime() <= endOfDayMs);
-
-                        let rawIn = "", rawOut = "";
-                        empShifts.forEach(s => {
-                            const timeFormatted = new Date(s.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-                            if (s.action === 'IN' && !rawIn) rawIn = timeFormatted;
-                            if (s.action === 'OUT') rawOut = timeFormatted;
-                        });
-
-                        const override = overridesMap[`${emp.id}_${dateStr}`] || {};
-                        
-                        let cellIn = override.in !== undefined ? override.in : rawIn;
-                        let cellOut = override.out !== undefined ? override.out : (rawIn && !rawOut ? 'Missed' : rawOut);
-                        let cellBreak = override.break !== undefined ? override.break : "";
-                        let cellTotal = override.total !== undefined ? override.total : "";
-
-                        // Calc default logic if no total override
-                        if (!cellTotal && cellIn && cellOut && cellOut.toLowerCase() !== "missed") {
-                            const parseTime = str => {
-                                if(!str || !str.includes(':')) return 0;
-                                let p = str.split(':');
-                                return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
-                            };
-                            let diff = Math.max(0, parseTime(cellOut) - parseTime(cellIn));
-                            if (isSignifi) {
-                                if (emp.payType === 'Hourly') {
-                                    cellTotal = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,'0')}`;
-                                } else {
-                                    if (diff >= 480) {
-                                        cellTotal = "Full Day";
-                                        if (diff > 480) cellBreak = `${Math.floor((diff-480)/60)}:${((diff-480)%60).toString().padStart(2,'0')}`;
-                                    } else {
-                                        cellTotal = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,'0')}`;
-                                    }
-                                }
-                            } else {
-                                if (diff > 240 && !cellBreak) cellBreak = "0:45";
-                                const parseMin = str => { if(!str || !str.includes(':')) return 0; let p = str.split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); };
-                                let bM = parseMin(cellBreak);
-                                let net = Math.max(0, diff - bM);
-                                cellTotal = `${Math.floor(net/60)}:${(net%60).toString().padStart(2,'0')}`;
-                            }
-                        }
-
-                        inCells += `<td><input type="text" class="time-input" id="in_${gIdx}_${eIdx}_${cIdx}" data-empid="${emp.id}" data-date="${dateStr}" data-field="in" value="${cellIn}" onchange="recalcTime(${gIdx}, ${eIdx}, ${cIdx}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'in')"></td>`;
-                        outCells += `<td><input type="text" class="time-input" id="out_${gIdx}_${eIdx}_${cIdx}" data-empid="${emp.id}" data-date="${dateStr}" data-field="out" value="${cellOut}" onchange="recalcTime(${gIdx}, ${eIdx}, ${cIdx}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'out')"></td>`;
-                        breakCells += `<td><input type="text" class="time-input" id="break_${gIdx}_${eIdx}_${cIdx}" data-empid="${emp.id}" data-date="${dateStr}" data-field="break" value="${cellBreak}" onchange="recalcTime(${gIdx}, ${eIdx}, ${cIdx}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'break')"></td>`;
-                        totalCells += `<td><input type="text" class="time-input total-input" id="total_${gIdx}_${eIdx}_${cIdx}" data-empid="${emp.id}" data-date="${dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${cellTotal}" value="${cellTotal}" style="font-weight:bold; ${cellTotal.toLowerCase()==='off'?'color:red;':''}" onchange="recalcTime(${gIdx}, ${eIdx}, ${cIdx}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'total')"></td>`;
-                    });
-
-                    reportHtml += `<tr style="border-top: 2px solid #000;">
-                        <td rowspan="4" style="font-weight:bold; vertical-align:middle; background:#f9f9f9;">${emp.name}<br><small style="color:gray;">${emp.department}</small></td>
-                        <td style="font-size:11px;">IN</td>${inCells}`;
-
-                    if (isSignifi) {
-                        reportHtml += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="font-weight:bold; vertical-align:middle;">-</td>`;
-                        reportHtml += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="font-weight:bold; vertical-align:middle;">-</td>`;
-                        reportHtml += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="vertical-align:middle; font-size:12px;">-</td>`;
-                    } else {
-                        reportHtml += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="font-weight:bold; vertical-align:middle;">-</td>`;
+                const empScans = {};
+                logs.forEach(l => {
+                    const id = l.employee_id;
+                    if (!empScans[id]) {
+                        empScans[id] = {
+                            id: id,
+                            name: l.employees ? l.employees.full_name : id,
+                            dept: l.employees ? l.employees.department : 'General',
+                            scans: []
+                        };
                     }
-
-                    reportHtml += `<td rowspan="4" style="vertical-align:middle;"><input type="text" class="note-input" data-empid="${emp.id}" value="${empNote}" placeholder="Add notes..."></td></tr>`;
-                    reportHtml += `<tr><td style="font-size:11px;">OUT</td>${outCells}</tr>`;
-                    reportHtml += `<tr><td style="font-size:11px;">${isSignifi ? 'Ext' : 'Break'}</td>${breakCells}</tr>`;
-                    reportHtml += `<tr style="background:#f2f2f2;"><td style="font-size:11px; font-weight:bold;">Total</td>${totalCells}</tr>`;
+                    empScans[id].scans.push(new Date(l.scanned_at));
                 });
 
-                // Group Total Row
-                reportHtml += `<tr style="background-color: #e9ecef; font-weight: bold; border-top: 2px solid #000;">
-                    <td colspan="${rangeDates.length + 2}" style="text-align: right; padding-right: 15px;">TOTAL FOR ${groupName.toUpperCase()}:</td>`;
-                if (isSignifi) {
-                    reportHtml += `<td id="grouptotal_fulldays_${gIdx}">-</td><td id="grouptotal_extrahrs_${gIdx}">-</td><td></td>`;
-                } else {
-                    reportHtml += `<td id="grouptotal_${gIdx}">-</td>`;
-                }
-                reportHtml += `<td></td></tr></tbody></table>`;
-            });
+                let tableHtml = `
+                    <table class="report-table">
+                        <thead>
+                            <tr style="background-color: #d9d9d9;">
+                                <th>Employee ID</th>
+                                <th>Full Name</th>
+                                <th>Department</th>
+                                <th>Total Scans</th>
+                                <th>First Scan</th>
+                                <th>Last Scan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
 
-            container.innerHTML = reportHtml;
+                Object.values(empScans).forEach(e => {
+                    const first = e.scans[0].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const last = e.scans.length > 1 ? e.scans[e.scans.length - 1].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
 
-            // Trigger Recalc for initial totals
-            Object.keys(groups).forEach((groupName, gIdx) => {
-                groups[groupName].forEach((emp, eIdx) => {
-                    recalcTime(gIdx, eIdx, 0, rangeDates.length, emp.type, emp.payType, '');
+                    tableHtml += `
+                        <tr>
+                            <td><strong>${e.id}</strong></td>
+                            <td style="text-align:left; padding-left:10px;">${e.name}</td>
+                            <td>${e.dept}</td>
+                            <td>${e.scans.length}</td>
+                            <td>${first}</td>
+                            <td>${last}</td>
+                        </tr>
+                    `;
                 });
-            });
-        }
 
-        function exportReportToExcel() {
-            const reportContainer = document.getElementById('report-container');
-            if (!reportContainer || !reportContainer.querySelector('table')) {
-                alert("Please generate a report first before exporting.");
-                return;
+                tableHtml += '</tbody></table>';
+                container.innerHTML = tableHtml;
+
+            } catch (err) {
+                container.innerHTML = `<p style="color:red;">Error generating report: ${err.message}</p>`;
             }
-            const html = reportContainer.innerHTML;
-            const blob = new Blob([`
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <!--[if gte mso 9]>
-                    <xml>
-                        <x:ExcelWorkbook>
-                            <x:ExcelWorksheets>
-                                <x:ExcelWorksheet>
-                                    <x:Name>Timesheet Report</x:Name>
-                                    <x:WorksheetOptions>
-                                        <x:DisplayGridlines/>
-                                    </x:WorksheetOptions>
-                                </x:ExcelWorksheet>
-                            </x:ExcelWorksheets>
-                        </x:ExcelWorkbook>
-                    </xml>
-                    <![endif]-->
-                    <style>
-                        table { border-collapse: collapse; width: 100%; font-family: Calibri, sans-serif; }
-                        th, td { border: 1px solid #000; padding: 5px; text-align: center; }
-                        .report-header-title { background-color: #bfbfbf; font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    ${html}
-                </body>
-                </html>
-            `], { type: 'application/vnd.ms-excel' });
-
-            const startStr = document.getElementById('report-start').value || 'start';
-            const endStr = document.getElementById('report-end').value || 'end';
-            const fileName = `Timesheet_Report_${startStr}_to_${endStr}.xls`;
-
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        // === SIGNIFI REPORT TAB ===
-        function toggleSignifiDeptFilter(dept) {
-            if (dept === 'All') {
-                currentSignifiDeptFilters = ['All'];
-            } else {
-                currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== 'All');
-                if (currentSignifiDeptFilters.includes(dept)) {
-                    currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== dept);
-                    if (currentSignifiDeptFilters.length === 0) currentSignifiDeptFilters = ['All'];
-                } else {
-                    currentSignifiDeptFilters.push(dept);
-                }
-            }
-            generateSignifiSummary();
-        }
-
-        function generateSignifiSummary() {
-            const startStr = document.getElementById('summary-start').value;
-            const endStr = document.getElementById('summary-end').value;
-            const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
-            const viewMode = document.getElementById('signifi-report-view-mode') ? document.getElementById('signifi-report-view-mode').value : 'bottom';
-            
-            if (!startStr || !endStr) return;
-
-            const container = document.getElementById('summary-container');
-            const employees = getLocal(STORAGE_KEYS.EMPLOYEES, []);
-            const notesMap = getLocal(STORAGE_KEYS.NOTES, {});
-
-            const signifiEmps = employees.filter(e => e.type === 'Signifi' && !e.isLaidOff);
-
-            const depts = new Set();
-            signifiEmps.forEach(e => depts.add(e.department ? e.department.trim() : 'General'));
-
-            let deptTabsHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
-            Array.from(depts).sort().forEach(d => {
-                const safeD = d.replace(/'/g, "\\'");
-                deptTabsHtml += `<button class="filter-btn ${currentSignifiDeptFilters.includes(d) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeD}')">${d}</button>`;
-            });
-            document.getElementById('dynamic-signifi-dept-tabs').innerHTML = deptTabsHtml;
-
-            let filteredEmps = signifiEmps.filter(e => {
-                const empDept = e.department ? e.department.trim() : 'General';
-                if (currentSignifiDeptFilters.includes('All')) return true;
-                return currentSignifiDeptFilters.includes(empDept);
-            });
-
-            filteredEmps.sort((a, b) => {
-                if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
-                if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
-                if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
-                if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
-                return 0;
-            });
-
-            let html = `<table class="report-table">
-                <thead>
-                    <tr style="background-color: #d9d9d9; font-weight: bold;">
-                        <th>Employee Name</th>
-                        <th>Department</th>
-                        <th>Pay Type</th>
-                        <th>Vacation Used</th>
-                        <th>Sick Used</th>
-                        <th>Paid Lieu Used</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-            if (filteredEmps.length === 0) {
-                html += `<tr><td colspan="7" style="text-align:center;">No Signifi employees found.</td></tr>`;
-            } else {
-                filteredEmps.forEach(emp => {
-                    const note = notesMap[emp.id] || "";
-                    html += `<tr>
-                        <td style="font-weight:bold;">${emp.name}</td>
-                        <td>${emp.department}</td>
-                        <td>${emp.payType || 'Salaried'}</td>
-                        <td>${emp.vacationUsed || 0} / ${emp.vacationTotal || 0}</td>
-                        <td>${emp.sickUsed || 0} / ${emp.sickTotal || 0}</td>
-                        <td>${emp.lieuUsed || 0} / ${emp.lieuTotal || 0}</td>
-                        <td>${note}</td>
-                    </tr>`;
-                });
-            }
-
-            html += `</tbody></table>`;
-            container.innerHTML = html;
-        }
-
-        function exportSummaryToExcel() {
-            const summaryContainer = document.getElementById('summary-container');
-            if (!summaryContainer || !summaryContainer.querySelector('table')) {
-                alert("Please generate a summary report first before exporting.");
-                return;
-            }
-            const html = summaryContainer.innerHTML;
-            const blob = new Blob([`
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <!--[if gte mso 9]>
-                    <xml>
-                        <x:ExcelWorkbook>
-                            <x:ExcelWorksheets>
-                                <x:ExcelWorksheet>
-                                    <x:Name>Signifi Summary</x:Name>
-                                    <x:WorksheetOptions>
-                                        <x:DisplayGridlines/>
-                                    </x:WorksheetOptions>
-                                </x:ExcelWorksheet>
-                            </x:ExcelWorksheets>
-                        </x:ExcelWorkbook>
-                    </xml>
-                    <![endif]-->
-                    <style>
-                        table { border-collapse: collapse; width: 100%; font-family: Calibri, sans-serif; }
-                        th, td { border: 1px solid #000; padding: 5px; text-align: center; }
-                    </style>
-                </head>
-                <body>
-                    ${html}
-                </body>
-                </html>
-            `], { type: 'application/vnd.ms-excel' });
-
-            const startStr = document.getElementById('summary-start').value || 'start';
-            const endStr = document.getElementById('summary-end').value || 'end';
-            const fileName = `Signifi_Summary_${startStr}_to_${endStr}.xls`;
-
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
         }
     </script>
 </body>
