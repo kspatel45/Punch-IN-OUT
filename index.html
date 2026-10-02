@@ -448,8 +448,8 @@
 
         // System Admin Users Store (Database synced or fallback local storage)
         let adminUsers = JSON.parse(localStorage.getItem('sys_admin_users')) || [
-            { username: 'admin', pass: 'password123', role: 'Super Admin' },
-            { username: 'manager', pass: 'manager123', role: 'Manager' }
+            { username: 'admin', pass: '***********', role: 'Super Admin' },
+            { username: 'manager', pass: '**********', role: 'Manager' }
         ];
 
         function saveAdminUsersToStorage() {
