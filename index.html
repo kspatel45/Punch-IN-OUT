@@ -444,6 +444,7 @@
 
         let supabaseClient = null;
         let currentUserRole = 'Super Admin'; // Active user role after login
+        let currentEmpActiveStatus = true;
 
         // System Admin Users Store (Database synced or fallback local storage)
         let adminUsers = JSON.parse(localStorage.getItem('sys_admin_users')) || [
@@ -660,7 +661,6 @@
             // Apply permission rules based on currentUserRole
             const isSuper = currentUserRole === 'Super Admin';
             const isAdmin = currentUserRole === 'Admin' || isSuper;
-            const isManager = currentUserRole === 'Manager';
 
             // Show/Hide Tab Buttons
             document.getElementById('tab-btn-users').style.display = isSuper ? 'inline-block' : 'none';
@@ -719,6 +719,11 @@
 
         let cachedEmployees = [];
 
+        function editEmployeeById(empId) {
+            const emp = cachedEmployees.find(e => e.employee_id.toString() === empId.toString());
+            if (emp) openEmployeeModal(emp);
+        }
+
         async function loadEmployees() {
             const tbody = document.getElementById('employee-list-body');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading from Supabase...</td></tr>';
@@ -752,13 +757,15 @@
                     const statusText = emp.active !== false ? '<span style="color:green; font-weight:bold;">Active</span>' : '<span style="color:red; font-weight:bold;">Inactive</span>';
                     const toggleText = emp.active !== false ? 'Deactivate' : 'Activate';
                     const toggleColor = emp.active !== false ? '#fd7e14' : '#28a745';
+                    const safeName = emp.full_name.replace(/'/g, "\\'");
+                    const safeDept = (emp.department || '').replace(/'/g, "\\'");
 
                     const actionsHtml = canEdit ? `
-                        <button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', '${(emp.department||'').replace(/'/g, "\\'")}')">Print</button>
-                        <button class="small-btn btn-edit" onclick="openEmployeeModal(${JSON.stringify(emp).replace(/"/g, '&quot;')})">Edit</button>
+                        <button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${safeName}', '${safeDept}')">Print</button>
+                        <button class="small-btn btn-edit" onclick="editEmployeeById('${emp.employee_id}')">Edit</button>
                         <button class="small-btn" style="background-color: ${toggleColor};" onclick="toggleEmployeeStatus('${emp.employee_id}', ${emp.active !== false})">${toggleText}</button>
-                        <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}')">Delete</button>
-                    ` : `<button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', '${(emp.department||'').replace(/'/g, "\\'")}')">Print Badge</button>`;
+                        <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.employee_id}', '${safeName}')">Delete</button>
+                    ` : `<button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${safeName}', '${safeDept}')">Print Badge</button>`;
 
                     tbody.innerHTML += `
                         <tr>
@@ -794,6 +801,7 @@
             document.getElementById('emp-type-select').value = 'Signifi';
             document.getElementById('emp-pay-type').value = 'Hourly';
             document.getElementById('emp-vacation-total').value = 10;
+            currentEmpActiveStatus = true;
             toggleDeptCustom();
 
             if (empData) {
@@ -804,6 +812,7 @@
                 document.getElementById('emp-type-select').value = empData.employment_type || 'Signifi';
                 document.getElementById('emp-pay-type').value = empData.pay_type || 'Hourly';
                 document.getElementById('emp-vacation-total').value = empData.vacation_total || 10;
+                currentEmpActiveStatus = empData.active !== false;
 
                 const predefined = ['Production', 'Inventory', 'Quality'];
                 if (predefined.includes(empData.department)) {
@@ -821,6 +830,7 @@
         }
 
         async function saveEmployee() {
+            const originalId = document.getElementById('emp-original-id').value.trim();
             const requestedId = document.getElementById('emp-id').value.trim();
             const fullName = document.getElementById('emp-name').value.trim();
 
@@ -838,6 +848,10 @@
             const empId = requestedId || Math.floor(100000 + Math.random() * 900000).toString();
 
             try {
+                if (originalId && originalId !== empId) {
+                    await supabaseClient.from('employees').delete().eq('employee_id', originalId);
+                }
+
                 const { error } = await supabaseClient
                     .from('employees')
                     .upsert({
@@ -847,7 +861,7 @@
                         employment_type: empType,
                         pay_type: payType,
                         vacation_total: vacationTotal,
-                        active: true
+                        active: currentEmpActiveStatus
                     }, { onConflict: 'employee_id' });
 
                 if (error) throw error;
@@ -966,8 +980,8 @@
             container.innerHTML = '<p>Fetching scan logs from Supabase...</p>';
 
             try {
-                const startDate = new Date(startVal + 'T00:00:00Z').toISOString();
-                const endDate = new Date(endVal + 'T23:59:59Z').toISOString();
+                const startDate = new Date(startVal + 'T00:00:00').toISOString();
+                const endDate = new Date(endVal + 'T23:59:59.999').toISOString();
 
                 const { data: logs, error } = await supabaseClient
                     .from('scan_logs')
