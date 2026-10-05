@@ -611,7 +611,6 @@
             if (SUPABASE_URL && SUPABASE_KEY) {
                 try {
                     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    // Test connection to employees quietly
                     supabaseClient.from('employees').select('employee_id').limit(1).then(({ error }) => {
                         if (!error) {
                             statusDiv.style.backgroundColor = '#28a745';
@@ -668,6 +667,8 @@
             let breakInput = document.getElementById(`break_${gIdx}_${eIdx}_${colIdx}`);
             let totalInput = document.getElementById(`total_${gIdx}_${eIdx}_${colIdx}`);
 
+            if (!inInput || !outInput || !breakInput || !totalInput) return;
+
             if (changedField === 'total') {
                 let cTotal = totalInput.value.trim().toLowerCase();
                 if (cTotal === '0' || cTotal === '0:00') {
@@ -700,7 +701,6 @@
             if (inVal && outVal && outVal.toLowerCase() !== "missed") {
                 let inM = parseTime(inVal);
                 let outM = parseTime(outVal);
-                
                 let diff = Math.max(0, outM - inM);
                 
                 if (isSignifi) {
@@ -711,8 +711,7 @@
                         if (diff >= 480) {
                             newTotal = "Full Day";
                             let ext = diff - 480;
-                            if (ext > 0) newThird = formatTime(ext);
-                            else newThird = "";
+                            newThird = ext > 0 ? formatTime(ext) : "";
                         } else {
                             newTotal = formatTime(diff);
                             newThird = "";
@@ -738,12 +737,7 @@
                 }
             }
             
-            if (totalInput.value.trim().toLowerCase() === 'off') {
-                totalInput.style.color = 'red';
-            } else {
-                totalInput.style.color = 'inherit';
-            }
-            
+            totalInput.style.color = (totalInput.value.trim().toLowerCase() === 'off') ? 'red' : 'inherit';
             if (newThird !== thirdVal) breakInput.value = newThird;
 
             // Update Aggregates
@@ -752,60 +746,71 @@
                     let totalMins = 0;
                     let leavesList = [];
                     for(let i=0; i<numCols; i++) {
-                        let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim().toLowerCase();
+                        let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                        if(!tEl) continue;
+                        let tVal = tEl.value.trim().toLowerCase();
                         if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
                             totalMins += 480; 
-                            let origVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                            leavesList.push(origVal);
+                            leavesList.push(tEl.value.trim());
                         } else if (!tVal.includes('off') && tVal !== "") {
                             totalMins += parseTime(tVal);
                         }
                     }
-                    document.getElementById(`fulldays_${gIdx}_${eIdx}`).innerText = `${formatTime(totalMins)} Hours`;
-                    document.getElementById(`extrahrs_${gIdx}_${eIdx}`).innerText = ""; 
+                    const fdEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
+                    if(fdEl) fdEl.innerText = `${formatTime(totalMins)} Hours`;
+                    const exEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
+                    if(exEl) exEl.innerText = ""; 
                     
                     let leaveSummary = {};
                     leavesList.forEach(l => {
                         let key = l.split('-')[0];
                         leaveSummary[key] = (leaveSummary[key] || 0) + 1;
                     });
-                    document.getElementById(`leaves_${gIdx}_${eIdx}`).innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
+                    const lvEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
+                    if(lvEl) lvEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
                 } else {
                     let fullDaysCount = 0;
                     let extraHrsMins = 0;
                     let leavesList = [];
                     
                     for(let i=0; i<numCols; i++) {
-                        let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim().toLowerCase();
-                        let extVal = document.getElementById(`break_${gIdx}_${eIdx}_${i}`).value.trim();
+                        let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                        let bEl = document.getElementById(`break_${gIdx}_${eIdx}_${i}`);
+                        if(!tEl) continue;
+
+                        let tVal = tEl.value.trim().toLowerCase();
+                        let extVal = bEl ? bEl.value.trim() : "";
                         
                         if (tVal === "full day" || tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
                             fullDaysCount++;
                         }
                         if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                            let origVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                            leavesList.push(origVal);
+                            leavesList.push(tEl.value.trim());
                         }
                         extraHrsMins += parseTime(extVal);
                     }
                     
-                    document.getElementById(`fulldays_${gIdx}_${eIdx}`).innerText = `${fullDaysCount} Days`;
-                    document.getElementById(`extrahrs_${gIdx}_${eIdx}`).innerText = formatTime(extraHrsMins) || "0:00";
+                    const fdEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
+                    if(fdEl) fdEl.innerText = `${fullDaysCount} Days`;
+                    const exEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
+                    if(exEl) exEl.innerText = formatTime(extraHrsMins) || "0:00";
                     
                     let leaveSummary = {};
                     leavesList.forEach(l => {
                         let key = l.split('-')[0];
                         leaveSummary[key] = (leaveSummary[key] || 0) + 1;
                     });
-                    document.getElementById(`leaves_${gIdx}_${eIdx}`).innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
+                    const lvEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
+                    if(lvEl) lvEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
                 }
             } else {
                 let empTotal = 0;
                 for(let i=0; i<numCols; i++) {
-                    let tVal = document.getElementById(`total_${gIdx}_${eIdx}_${i}`).value.trim();
-                    empTotal += parseTime(tVal);
+                    let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                    if(tEl) empTotal += parseTime(tEl.value.trim());
                 }
-                document.getElementById(`emptotal_${gIdx}_${eIdx}`).innerText = formatTime(empTotal);
+                const etEl = document.getElementById(`emptotal_${gIdx}_${eIdx}`);
+                if(etEl) etEl.innerText = formatTime(empTotal);
             }
 
             // Group Totals
@@ -818,33 +823,27 @@
                 document.querySelectorAll(`.group-fulldays-${gIdx}`).forEach(el => {
                     let txt = el.innerText || "";
                     if (txt.includes('Days')) {
-                        grpFullDays += parseInt(txt) || 0;
+                        grpFullDays += parseInt(txt, 10) || 0;
                         hasSalaried = true;
                     } else if (txt.includes('Hours')) {
                         hasHourly = true;
                     }
                 });
                 document.querySelectorAll(`.group-extrahrs-${gIdx}`).forEach(el => {
-                    let txt = el.innerText || "";
-                    grpExtraHrs += parseTime(txt);
+                    grpExtraHrs += parseTime(el.innerText || "");
                 });
                 
-                if(document.getElementById(`grouptotal_fulldays_${gIdx}`)) {
-                    if (hasSalaried && !hasHourly) {
-                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = `${grpFullDays} Days`;
-                    } else {
-                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = "-"; 
-                    }
-                }
-                if(document.getElementById(`grouptotal_extrahrs_${gIdx}`)) {
-                    document.getElementById(`grouptotal_extrahrs_${gIdx}`).innerText = formatTime(grpExtraHrs) || "";
-                }
+                const gtFd = document.getElementById(`grouptotal_fulldays_${gIdx}`);
+                if (gtFd) gtFd.innerText = (hasSalaried && !hasHourly) ? `${grpFullDays} Days` : "-"; 
+                const gtEx = document.getElementById(`grouptotal_extrahrs_${gIdx}`);
+                if (gtEx) gtEx.innerText = formatTime(grpExtraHrs) || "";
             } else {
                 let groupTotal = 0;
                 document.querySelectorAll(`.group-emptotal-${gIdx}`).forEach(el => {
                     groupTotal += parseTime(el.innerText);
                 });
-                if(document.getElementById(`grouptotal_${gIdx}`)) document.getElementById(`grouptotal_${gIdx}`).innerText = formatTime(groupTotal);
+                const gtEl = document.getElementById(`grouptotal_${gIdx}`);
+                if(gtEl) gtEl.innerText = formatTime(groupTotal);
             }
         };
 
@@ -855,18 +854,15 @@
                 const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59, 999);
                 const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
                 
-                // Fetch active employees
                 const { data: emps, error: eErr } = await supabaseClient.from('employees').select('employee_id, is_laid_off').eq('is_laid_off', false);
                 if (eErr || !emps) return;
                 
                 const allEmpIds = emps.map(e => e.employee_id);
 
-                // Fetch existing Overrides
                 const { data: overrides } = await supabaseClient.from('timesheet_overrides').select('emp_id').eq('date', dateStr);
                 const existingOverrides = {};
                 if (overrides) overrides.forEach(o => existingOverrides[o.emp_id] = true);
 
-                // Fetch Shifts (scan logs with action)
                 const { data: shifts } = await supabaseClient.from('scan_logs')
                     .select('*')
                     .gte('scanned_at', startOfDay.toISOString())
@@ -947,7 +943,6 @@
             }
         });
 
-        // Aggressive Kiosk Auto-Focus System 
         setInterval(() => {
             const adminView = document.getElementById('admin-view');
             const modals = document.querySelectorAll('.modal');
@@ -1041,7 +1036,6 @@
                         }
                     });
 
-                    // 10 MINUTE COOLDOWN LOGIC
                     if (latestRawTime > 0) {
                         const diffMs = Date.now() - latestRawTime;
                         const tenMinutesMs = 10 * 60 * 1000;
@@ -1059,7 +1053,6 @@
                     }
                 }
 
-                // Check Admin Manual Overrides for TODAY
                 const { data: override } = await supabaseClient.from('timesheet_overrides').select('*').eq('id', `${badgeId}_${todayStr}`).single();
 
                 let effIn = rawIn ? "System IN" : "";
@@ -1551,12 +1544,12 @@
                 return alert("Please specify the Agency name."); 
             }
 
-            let vacTotal = parseInt(document.getElementById('emp-vacation-total').value) || 0;
-            let vacUsed = parseInt(document.getElementById('emp-vacation-used').value) || 0;
-            let sickTot = parseInt(document.getElementById('emp-sick-total').value) || 0;
-            let sickUsd = parseInt(document.getElementById('emp-sick-used').value) || 0;
-            let lieuTot = parseInt(document.getElementById('emp-lieu-total').value) || 0;
-            let lieuUsd = parseInt(document.getElementById('emp-lieu-used').value) || 0;
+            let vacTotal = parseInt(document.getElementById('emp-vacation-total').value, 10) || 0;
+            let vacUsed = parseInt(document.getElementById('emp-vacation-used').value, 10) || 0;
+            let sickTot = parseInt(document.getElementById('emp-sick-total').value, 10) || 0;
+            let sickUsd = parseInt(document.getElementById('emp-sick-used').value, 10) || 0;
+            let lieuTot = parseInt(document.getElementById('emp-lieu-total').value, 10) || 0;
+            let lieuUsd = parseInt(document.getElementById('emp-lieu-used').value, 10) || 0;
 
             if (type !== 'Signifi') {
                 vacTotal = 0; vacUsed = 0; sickTot = 0; sickUsd = 0; lieuTot = 0; lieuUsd = 0;
@@ -1565,7 +1558,7 @@
 
             const badgeId = requestedId ? requestedId : Math.floor(100000 + Math.random() * 900000).toString();
             const isNew = !originalId;
-            let empCreatedAt = createdAtVal ? parseInt(createdAtVal) : Date.now();
+            let empCreatedAt = createdAtVal ? parseInt(createdAtVal, 10) : Date.now();
 
             try {
                 if (isNew || originalId !== badgeId) {
@@ -1815,7 +1808,6 @@
                     await supabaseClient.from('timesheet_overrides').upsert(overrideArray);
                 }
                 
-                // Update Leave Balances
                 for (let empId of Object.keys(empDeltas)) {
                     let delta = empDeltas[empId];
                     if (delta.vac !== 0 || delta.sick !== 0 || delta.lieu !== 0) {
@@ -1949,7 +1941,6 @@
                 const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                 let html = "";
                 let gIdx = 0;
-                let excelRow = 1; 
 
                 for (let agency in groups) {
                     for (let dept in groups[agency]) {
@@ -1969,7 +1960,6 @@
 
                         html += `<table class="report-table" style="table-layout: fixed; width: 100%; border: 2px solid #000; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt;">`;
                         html += `<tr><td colspan="${titleColspan}" class="report-header-title" style="background-color: #bfbfbf; border: 2px solid #000; font-size: 18px; padding: 10px; font-weight: bold; text-align: center;">${tableTitle}</td></tr>`;
-                        excelRow++;
                         
                         html += `<tr style="background-color: #d9d9d9;">`;
                         html += `<td rowspan="2" style="width:4%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">S.NO.</td>`;
@@ -1978,7 +1968,7 @@
                         for (let i = 0; i < rangeDates.length; i++) { 
                             let d = rangeDates[i];
                             let bg = (d.getDay() === 0 || d.getDay() === 6) ? 'background-color: #bfbfbf;' : ''; 
-                            html += `<td style="width:7%; border: 1px solid #000; font-weight: bold; text-align: center; ${bg}">${dayNames[d.getDay()]}</td>`; 
+                            html += `<td style="border: 1px solid #000; font-weight: bold; text-align: center; ${bg}">${dayNames[d.getDay()]}</td>`; 
                         }
                         
                         if (isSignifi) {
@@ -1991,7 +1981,6 @@
                             html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Working area</td>`;
                             html += `<td rowspan="2" style="width:16%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Note for Extra hours</td></tr>`;
                         }
-                        excelRow++;
                         
                         html += `<tr style="background-color: #d9d9d9;">`;
                         for (let i = 0; i < rangeDates.length; i++) {
@@ -2001,17 +1990,11 @@
                             html += `<td style="border: 1px solid #000; text-align: center; ${bg}">${dStr}</td>`;
                         }
                         html += `</tr>`;
-                        excelRow++;
 
-                        let deptTotalRefs = [];
                         let eIdx = 0;
 
                         groups[agency][dept].forEach(emp => {
                             eIdx++;
-                            let empStartRow = excelRow;
-                            let payType = emp.pay_type || 'Salaried';
-                            let isHourly = (payType === 'Hourly');
-                            
                             let datalistId = `leave_${emp.employee_id}`;
                             let datalistHtml = `<datalist id="${datalistId}">`;
                             
@@ -2026,205 +2009,165 @@
                             }
                             datalistHtml += `</datalist>`;
                             
-                            let rowIn = "", rowOut = "", rowBreak = "", rowTotal = "";
-                            
+                            const inVals = [], outVals = [], breakVals = [], totalVals = [];
+
                             for (let i = 0; i < rangeDates.length; i++) {
                                 let d = rangeDates[i];
                                 const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                
-                                let dayData = (shiftData[emp.employee_id] && shiftData[emp.employee_id][dateStr]) ? shiftData[emp.employee_id][dateStr] : null;
-                                let override = overridesData[emp.employee_id + "_" + dateStr];
-                                
-                                let isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                                let bg = isWeekend ? 'background-color: #bfbfbf;' : 'background-color: #ffffff;';
-                                let bgTotalRow = isWeekend ? 'background-color: #bfbfbf;' : 'background-color: #e6e6e6;';
-                                
-                                let tIn = "", tOut = "", tBreak = "", tTotal = "";
-                                
-                                if (dayData && dayData.in) {
-                                    let roundedIn = new Date(dayData.in);
-                                    if ((roundedIn.getHours() === 8 && roundedIn.getMinutes() >= 30) || (roundedIn.getHours() === 9 && roundedIn.getMinutes() <= 14)) roundedIn.setHours(9, 0, 0, 0);
-                                    tIn = roundedIn.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-                                    
-                                    if (dayData.out) {
-                                        let roundedOut = new Date(dayData.out);
-                                        if ((roundedOut.getHours() === 16 && roundedOut.getMinutes() >= 50) || (roundedOut.getHours() === 17 && roundedOut.getMinutes() <= 14)) roundedOut.setHours(17, 0, 0, 0);
-                                        tOut = roundedOut.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-                                        let diffMins = Math.floor((roundedOut - roundedIn) / 60000);
-                                        
-                                        if (isSignifi) {
-                                            if (isHourly) {
-                                                tTotal = `${Math.floor(diffMins / 60)}:${(diffMins % 60).toString().padStart(2, '0')}`;
-                                            } else {
-                                                if (diffMins >= 480) {
-                                                    tTotal = "Full Day";
-                                                    let ext = diffMins - 480;
-                                                    if (ext > 0) tBreak = `${Math.floor(ext / 60)}:${(ext % 60).toString().padStart(2, '0')}`;
-                                                } else tTotal = `${Math.floor(diffMins / 60)}:${(diffMins % 60).toString().padStart(2, '0')}`;
-                                            }
-                                        } else {
-                                            tBreak = (diffMins > 240) ? "0:45" : "";
-                                        }
-                                    } else tOut = "Missed";
-                                }
+                                let dayData = (shiftData[emp.employee_id] && shiftData[emp.employee_id][dateStr]) ? shiftData[emp.employee_id][dateStr] : {};
+                                let override = overridesData[`${emp.employee_id}_${dateStr}`] || {};
 
-                                if (override) {
-                                    if (override.in_time !== undefined && override.in_time !== "") tIn = override.in_time;
-                                    if (override.out_time !== undefined && override.out_time.toLowerCase() !== "missed" && override.out_time !== "") tOut = override.out_time;
-                                    if (override.break_time !== undefined) tBreak = override.break_time;
-                                }
+                                let rawIn = dayData.in ? dayData.in.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '';
+                                let rawOut = dayData.out ? dayData.out.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : (dayData.in ? 'Missed' : '');
 
-                                const parseTimeStr = (str) => {
-                                    if(!str || !str.includes(':')) return 0;
-                                    let p = str.split(':');
-                                    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
-                                };
-                                
-                                if (tIn && tOut && tOut.toLowerCase() !== "missed") {
-                                    let inM = parseTimeStr(tIn);
-                                    let outM = parseTimeStr(tOut);
-                                    let diff = Math.max(0, outM - inM);
-                                    
+                                let inVal = (override.in_time !== undefined) ? override.in_time : rawIn;
+                                let outVal = (override.out_time !== undefined) ? override.out_time : rawOut;
+                                let breakVal = (override.break_time !== undefined) ? override.break_time : '';
+                                let totalVal = (override.total_time !== undefined) ? override.total_time : '';
+
+                                if (!totalVal && inVal && outVal && outVal.toLowerCase() !== 'missed') {
+                                    let parseT = (s) => {
+                                        if (!s || !s.includes(':')) return 0;
+                                        let parts = s.split(':');
+                                        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                                    };
+                                    let diff = Math.max(0, parseT(outVal) - parseT(inVal));
                                     if (isSignifi) {
-                                        if (isHourly) tTotal = `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
-                                        else {
+                                        if (emp.pay_type === 'Hourly') {
+                                            let h = Math.floor(diff / 60), m = diff % 60;
+                                            totalVal = h + ":" + m.toString().padStart(2, '0');
+                                        } else {
                                             if (diff >= 480) {
-                                                tTotal = "Full Day";
+                                                totalVal = "Full Day";
                                                 let ext = diff - 480;
-                                                if (ext > 0) tBreak = `${Math.floor(ext / 60)}:${(ext % 60).toString().padStart(2, '0')}`;
-                                            } else tTotal = `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
+                                                if (ext > 0 && !breakVal) {
+                                                    let eh = Math.floor(ext / 60), em = ext % 60;
+                                                    breakVal = eh + ":" + em.toString().padStart(2, '0');
+                                                }
+                                            } else {
+                                                let h = Math.floor(diff / 60), m = diff % 60;
+                                                totalVal = h + ":" + m.toString().padStart(2, '0');
+                                            }
                                         }
                                     } else {
-                                        if (diff > 240 && tBreak === "" && (!override || override.break_time === undefined)) tBreak = "0:45";
-                                        let bM = parseTimeStr(tBreak);
-                                        let netMins = Math.max(0, diff - bM);
-                                        tTotal = `${Math.floor(netMins / 60)}:${(netMins % 60).toString().padStart(2, '0')}`;
+                                        if (diff > 240 && !breakVal) breakVal = "0:45";
+                                        let bM = parseT(breakVal);
+                                        let net = Math.max(0, diff - bM);
+                                        let h = Math.floor(net / 60), m = net % 60;
+                                        totalVal = h + ":" + m.toString().padStart(2, '0');
                                     }
                                 }
-                                
-                                if (override && override.total_time !== undefined) tTotal = override.total_time;
-                                
-                                let inId = `in_${gIdx}_${eIdx}_${i}`, outId = `out_${gIdx}_${eIdx}_${i}`, breakId = `break_${gIdx}_${eIdx}_${i}`, totalId = `total_${gIdx}_${eIdx}_${i}`;
-                                let colLtr = getColLtr(3 + i);
-                                let inCell = `${colLtr}${empStartRow}`, outCell = `${colLtr}${empStartRow + 1}`, breakCell = `${colLtr}${empStartRow + 2}`;
-                                let excelFormula = `=IFERROR(${outCell}-${inCell}-IF(${breakCell}="",0,${breakCell}), 0)`;
-                                if (isSignifi) excelFormula = "";
-                                let tTotalColor = (tTotal.toLowerCase() === 'off') ? 'red' : 'inherit';
 
-                                rowIn += `<td style="border: 1px solid #000; padding: 0; text-align: center; ${bg}"><input type="text" id="${inId}" data-empid="${emp.employee_id}" data-date="${dateStr}" data-field="in" value="${tIn}" class="time-input" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${payType}', 'in')"></td>`;
-                                rowOut += `<td style="border: 1px solid #000; padding: 0; text-align: center; ${bg}"><input type="text" id="${outId}" data-empid="${emp.employee_id}" data-date="${dateStr}" data-field="out" value="${tOut}" class="time-input" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${payType}', 'out')"></td>`;
-                                rowBreak += `<td class="row-break" style="border: 1px solid #000; padding: 0; text-align: center; ${bg}"><input type="text" id="${breakId}" data-empid="${emp.employee_id}" data-date="${dateStr}" data-field="break" value="${tBreak}" class="time-input" style="color: ${isSignifi ? '#28a745' : 'red'}; font-weight: ${isSignifi ? 'bold' : 'normal'};" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${payType}', 'break')" ${isHourly ? 'readonly' : ''}></td>`;
-                                rowTotal += `<td style="border: 1px solid #000; padding: 0; ${bgTotalRow}"><input type="text" list="${datalistId}" id="${totalId}" data-empid="${emp.employee_id}" data-emptype="${emp.type}" data-date="${dateStr}" data-field="total" data-original="${tTotal}" data-formula="${excelFormula}" value="${tTotal}" class="time-input total-input" style="font-weight:bold; border:none; text-align:center; width:100%; background:transparent; color:${tTotalColor};" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${payType}', 'total')"></td>`;
+                                inVals.push({ val: inVal, dateStr });
+                                outVals.push({ val: outVal, dateStr });
+                                breakVals.push({ val: breakVal, dateStr });
+                                totalVals.push({ val: totalVal, dateStr });
                             }
 
-                            let defaultNote = notesData[emp.employee_id] ? notesData[emp.employee_id] : `Regular ${dept} Projects`;
-                            let firstTotCell = `${getColLtr(3)}${empStartRow + 3}`, lastTotCell = `${getColLtr(3 + rangeDates.length - 1)}${empStartRow + 3}`;
-                            let empTotalFormula = `=SUM(${firstTotCell}:${lastTotCell})`;
-                            let totColLtr = getColLtr(3 + rangeDates.length);
-                            deptTotalRefs.push(`${totColLtr}${empStartRow}`);
+                            html += datalistHtml;
 
+                            // Row 1: IN
                             html += `<tr>`;
-                            html += `<td rowspan="4" style="width:3%; font-weight:bold; border: 1px solid #000; text-align: center; vertical-align: middle; background-color: #ffffff;">${eIdx}</td>`;
-                            html += `<td rowspan="4" style="width:13%; font-weight:bold; border: 1px solid #000; text-align: center; vertical-align: middle; background-color: #ffffff;">${emp.full_name}${datalistHtml}</td>`;
-                            html += `<td style="width:4%; border: 1px solid #000; background-color: #ffffff; text-align: center;">In</td>${rowIn}`;
-                            
-                            if (isSignifi) {
-                                html += `<td id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" rowspan="4" style="font-weight:bold; font-size: 18px; border: 1px solid #000; text-align: center; vertical-align: middle; background-color: #ffffff;"></td>`;
-                                let extraHrsBg = isHourly ? "#f4f7f6" : "#ffffff";
-                                html += `<td id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" rowspan="4" style="font-weight:bold; font-size: 18px; color: #28a745; border: 1px solid #000; text-align: center; vertical-align: middle; background-color: ${extraHrsBg}; mso-number-format:'\\[h\\]\\:mm';"></td>`;
-                                html += `<td id="leaves_${gIdx}_${eIdx}" class="group-leaves-${gIdx}" rowspan="4" style="color:#007bff; font-weight:bold; font-size: 16px; border: 1px solid #000; text-align: center; vertical-align: middle; background-color: #ffffff;"></td>`;
-                            } else {
-                                html += `<td id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" data-formula="${empTotalFormula}" rowspan="4" style="font-weight:bold; font-size: 14px; border: 1px solid #000; text-align: center; vertical-align: middle; mso-number-format:'\\[h\\]\\:mm'; background-color: #ffffff;"></td>`;
-                                html += `<td rowspan="4" class="text-green" style="border: 1px solid #000; text-align: center; vertical-align: middle; background-color: #ffffff;">${dept}</td>`;
+                            html += `<td rowspan="4" style="border: 1px solid #000; text-align: center; vertical-align: middle;"><strong>${eIdx}</strong></td>`;
+                            html += `<td rowspan="4" style="border: 1px solid #000; text-align: left; padding: 5px; vertical-align: middle;"><strong>${emp.full_name}</strong><br><small style="color:gray;">${emp.employee_id}</small></td>`;
+                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">In</td>`;
+                            for (let i = 0; i < rangeDates.length; i++) {
+                                html += `<td style="border: 1px solid #000;"><input type="text" id="in_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${inVals[i].dateStr}" data-field="in" value="${inVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'in')"></td>`;
                             }
-                            
-                            html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle; background-color: #ffffff; padding: 0;">
-                                <input type="text" data-empid="${emp.employee_id}" data-field="note" value="${defaultNote}" class="note-input" style="width: 100%; height: 100%; min-height: 50px; border: none; text-align: center; background: transparent; font-family: inherit; font-size: inherit;">
-                            </td></tr>`;
-                            
-                            let row3Label = isSignifi ? "Extra&nbsp;Hours" : "Break";
-                            html += `<tr><td style="border: 1px solid #000; background-color: #ffffff; text-align: center;">Out</td>${rowOut}</tr>`;
-                            html += `<tr><td style="border: 1px solid #000; background-color: #ffffff; text-align: center;">${row3Label}</td>${rowBreak}</tr>`;
-                            html += `<tr style="background-color: #e6e6e6;"><td style="border: 1px solid #000; font-weight:bold; text-align: center;">Total</td>${rowTotal}</tr>`;
-                            excelRow += 4;
+                            if (isSignifi) {
+                                html += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.employee_id}" value="${notesData[emp.employee_id] || ''}"></td>`;
+                            } else {
+                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;">${emp.department}</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.employee_id}" value="${notesData[emp.employee_id] || ''}"></td>`;
+                            }
+                            html += `</tr>`;
+
+                            // Row 2: OUT
+                            html += `<tr>`;
+                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">Out</td>`;
+                            for (let i = 0; i < rangeDates.length; i++) {
+                                html += `<td style="border: 1px solid #000;"><input type="text" id="out_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${outVals[i].dateStr}" data-field="out" value="${outVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'out')"></td>`;
+                            }
+                            html += `</tr>`;
+
+                            // Row 3: BREAK / EXTRA
+                            html += `<tr>`;
+                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">${isSignifi ? 'Extra' : 'Break'}</td>`;
+                            for (let i = 0; i < rangeDates.length; i++) {
+                                html += `<td style="border: 1px solid #000;"><input type="text" id="break_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${breakVals[i].dateStr}" data-field="break" value="${breakVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'break')"></td>`;
+                            }
+                            html += `</tr>`;
+
+                            // Row 4: TOTAL
+                            html += `<tr>`;
+                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #e9e9e9; text-align: center;">Total</td>`;
+                            for (let i = 0; i < rangeDates.length; i++) {
+                                html += `<td style="border: 1px solid #000;"><input type="text" id="total_${gIdx}_${eIdx}_${i}" class="time-input total-input" list="${datalistId}" data-empid="${emp.employee_id}" data-date="${totalVals[i].dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${totalVals[i].val}" value="${totalVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'total')"></td>`;
+                            }
+                            html += `</tr>`;
                         });
-                        
-                        let totalRowLeftSpan = 3 + rangeDates.length; 
-                        html += `<tr class="totals-row" style="background-color: #a6a6a6;">`;
-                        
+
+                        // Table Group Footer
+                        html += `<tr style="background-color: #d9d9d9; font-weight: bold;">`;
+                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 6px;">Group Total:</td>`;
+                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000;"></td>`;
                         if (isSignifi) {
-                            html += `<td colspan="${totalRowLeftSpan}" style="border: 2px solid #000; font-weight:bold; text-align: center;">Department Totals</td>`;
-                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 2px solid #000; font-weight:bold; font-size: 16px; text-align: center;">0</td>`;
-                            html += `<td id="grouptotal_extrahrs_${gIdx}" class="text-green" style="border: 2px solid #000; font-weight:bold; font-size: 16px; color: #28a745; text-align: center; mso-number-format:'\\[h\\]\\:mm';">0:00</td>`;
-                            html += `<td colspan="2" style="border: 2px solid #000;"></td>`;
+                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">0 Days</td>`;
+                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
+                            html += `<td colspan="2" style="border: 1px solid #000;"></td>`;
                         } else {
-                            let groupTotalFormula = `=SUM(${deptTotalRefs.join(',')})`;
-                            html += `<td colspan="${totalRowLeftSpan}" style="border: 2px solid #000; font-weight:bold; text-align: center;">Total hours</td>`;
-                            html += `<td id="grouptotal_${gIdx}" data-formula="${groupTotalFormula}" class="text-green" style="border: 2px solid #000; font-weight:bold; text-align: center; mso-number-format:'\\[h\\]\\:mm';"></td>`;
-                            html += `<td colspan="2" style="border: 2px solid #000;"></td>`;
+                            html += `<td id="grouptotal_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
+                            html += `<td colspan="2" style="border: 1px solid #000;"></td>`;
                         }
-                        
-                        html += `</tr></table><br><br>`;
-                        excelRow += 2;
+                        html += `</tr></table><br>`;
                     }
                 }
-                html += `</table>`;
-                container.innerHTML = html || "<p>No shifts recorded.</p>";
-                
-                document.querySelectorAll('.time-input[data-field="in"]').forEach(input => input.dispatchEvent(new Event('change')));
-            } catch(e) {
-                container.innerHTML = "<p>Error loading data. Is the database connected?</p>";
-                console.error(e);
+
+                container.innerHTML = html || "<p>No employees found for the selected criteria.</p>";
+
+                // Trigger live recalculations across all loaded employee rows
+                let curG = 0;
+                for (let agency in groups) {
+                    for (let dept in groups[agency]) {
+                        curG++;
+                        let eIdx = 0;
+                        groups[agency][dept].forEach(emp => {
+                            eIdx++;
+                            if (rangeDates.length > 0) {
+                                window.recalcTime(curG, eIdx, 0, rangeDates.length, emp.type, emp.pay_type, '');
+                            }
+                        });
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<p style="color:red;">Error generating report: ${err.message}</p>`;
             }
         }
 
+        // === EXPORT REPORT TO EXCEL ===
         function exportReportToExcel() {
             const container = document.getElementById('report-container');
-            if (container.innerHTML.includes("Loading") || container.innerHTML.includes("No shifts") || container.innerHTML.includes("Error")) return;
-            
-            const clone = container.cloneNode(true);
-            const originalInputs = container.querySelectorAll('.note-input, .time-input');
-            const cloneInputs = clone.querySelectorAll('.note-input, .time-input');
-            
-            for (let i = 0; i < originalInputs.length; i++) {
-                const val = originalInputs[i].value.trim();
-                const td = cloneInputs[i].parentNode;
-                
-                if (originalInputs[i].dataset.field === 'total') {
-                    if (val.toLowerCase().includes('vacation') || val.toLowerCase().includes('sick') || val.toLowerCase().includes('paid lieu') || val.toLowerCase().includes('off') || val.toLowerCase().includes('stat holiday') || val.toLowerCase().includes('full day')) {
-                        originalInputs[i].removeAttribute('data-formula');
-                        cloneInputs[i].removeAttribute('data-formula');
-                        if (td.getAttribute("style")) td.setAttribute("style", td.getAttribute("style").replace(/mso-number-format:'\\[h\\]\\:mm';/g, ""));
-                    }
-                }
-                
-                if (originalInputs[i].classList.contains('time-input') && val !== "" && val.toLowerCase() !== "missed" && !val.toLowerCase().includes('vacation') && !val.toLowerCase().includes('sick') && !val.toLowerCase().includes('paid lieu') && !val.toLowerCase().includes('off') && !val.toLowerCase().includes('stat holiday') && !val.toLowerCase().includes('full day')) {
-                    td.setAttribute("style", td.getAttribute("style") + "mso-number-format:'\\[h\\]\\:mm';");
-                }
-                
-                td.innerHTML = `<span style="${originalInputs[i].style.color ? `color:${originalInputs[i].style.color};` : ''}">${val === '0:00' ? '' : val}</span>`;
-            }
+            const tables = container.querySelectorAll('table');
+            if (tables.length === 0) return alert("No report data to export.");
 
-            const formulaCells = clone.querySelectorAll('[data-formula]');
-            formulaCells.forEach(cell => {
-                const formTxt = cell.getAttribute('data-formula');
-                if (formTxt) { cell.setAttribute('x:fmla', formTxt); cell.innerText = formTxt; }
+            const wb = XLSX.utils.book_new();
+            tables.forEach((table, index) => {
+                const ws = XLSX.utils.table_to_sheet(table);
+                const sheetName = `Report_${index + 1}`.substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
             });
-
-            const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>table { border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt; text-align: center; vertical-align: middle; } th, td { border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle; } .weekend-col { background-color: #a6a6a6; } .text-green { color: #00b050; font-weight: bold; } .row-break { color: red; } .totals-row { background-color: #a6a6a6; font-weight: bold; }</style></head><body>${clone.innerHTML}</body></html>`;
-            
-            const blob = new Blob([template], { type: 'application/vnd.ms-excel' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            
-            const startD = document.getElementById('report-start').value;
-            const endD = document.getElementById('report-end').value;
-            link.download = `Timesheet_${startD}_to_${endD}.xls`;
-            
-            link.click();
+            const startStr = document.getElementById('report-start').value || 'start';
+            const endStr = document.getElementById('report-end').value || 'end';
+            XLSX.writeFile(wb, `Timesheet_Report_${startStr}_to_${endStr}.xlsx`);
         }
 
-        // === SIGNIFI REPORT TAB ===
+        // === SIGNIFI REPORT TAB LOGIC ===
         function toggleSignifiDeptFilter(dept) {
             if (dept === 'All') currentSignifiDeptFilters = ['All'];
             else {
@@ -2237,259 +2180,128 @@
             generateSignifiSummary();
         }
 
-        function renderSignifiDeptFilters() {
-            const container = document.getElementById('dynamic-signifi-dept-tabs');
-            if (!container) return;
-            let html = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
-            availableDepartments.forEach(dept => {
-                const safeDept = dept.replace(/'/g, "\\'");
-                html += `<button class="filter-btn ${currentSignifiDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeDept}')">${dept}</button>`;
-            });
-            container.innerHTML = html;
-        }
-
         async function generateSignifiSummary() {
             const startStr = document.getElementById('summary-start').value;
             const endStr = document.getElementById('summary-end').value;
+            const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
+            const container = document.getElementById('summary-container');
+            const deptTabsContainer = document.getElementById('dynamic-signifi-dept-tabs');
 
             if (!startStr || !endStr) return alert("Please select both a Start Date and End Date.");
 
-            const startD = new Date(startStr + "T00:00:00");
-            const endD = new Date(endStr + "T23:59:59");
-            if (endD < startD) return alert("End date must be after start date.");
-
-            const rangeDates = [];
-            let currentD = new Date(startD);
-            while (currentD <= endD) {
-                rangeDates.push(new Date(currentD));
-                currentD.setDate(currentD.getDate() + 1);
-            }
-
-            const container = document.getElementById('summary-container');
-            container.innerHTML = "<p>Loading summary...</p>";
+            container.innerHTML = "<p>Loading Signifi Summary Report...</p>";
 
             try {
-                const { data: empsSnapshot } = await supabaseClient.from("employees").select("*").eq("type", "Signifi");
-                const employees = [];
-                const reportDepts = new Set();
-                
-                if (empsSnapshot) {
-                    empsSnapshot.forEach(emp => {
-                        if (!emp.is_laid_off) {
-                            employees.push(emp);
-                            reportDepts.add(emp.department ? emp.department.trim() : 'General');
-                        }
-                    });
+                const { data: empsSnap } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi').eq('is_laid_off', false);
+                if (!empsSnap || empsSnap.length === 0) {
+                    container.innerHTML = "<p>No Signifi employees found.</p>";
+                    return;
                 }
 
-                if (employees.length === 0) return container.innerHTML = "<p>No active Signifi employees found.</p>";
+                const signifiDepts = new Set();
+                empsSnap.forEach(e => signifiDepts.add(e.department ? e.department.trim() : 'General'));
 
-                availableDepartments = Array.from(reportDepts).sort();
-                renderSignifiDeptFilters();
+                let deptTabsHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
+                Array.from(signifiDepts).sort().forEach(d => {
+                    const safeD = d.replace(/'/g, "\\'");
+                    deptTabsHtml += `<button class="filter-btn ${currentSignifiDeptFilters.includes(d) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeD}')">${d}</button>`;
+                });
+                deptTabsContainer.innerHTML = deptTabsHtml;
 
-                const { data: overridesSnap } = await supabaseClient.from("timesheet_overrides").select("*").gte("date", startStr).lte("date", endStr);
-                const overridesData = {};
-                if(overridesSnap) overridesSnap.forEach(doc => overridesData[doc.id] = doc);
-
-                const { data: shiftsSnap } = await supabaseClient.from("scan_logs").select("*").gte("scanned_at", startD.toISOString()).lte("scanned_at", endD.toISOString()).order("scanned_at", { ascending: true });
-                const shiftData = {};
-                
-                if(shiftsSnap) {
-                    shiftsSnap.forEach(row => {
-                        const d = new Date(row.scanned_at);
-                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                        if (!shiftData[row.employee_id]) shiftData[row.employee_id] = {};
-                        if (!shiftData[row.employee_id][dateStr]) shiftData[row.employee_id][dateStr] = {};
-                        if (row.action === "IN" && !shiftData[row.employee_id][dateStr].in) shiftData[row.employee_id][dateStr].in = d;
-                        else if (row.action === "OUT") shiftData[row.employee_id][dateStr].out = d;
-                    });
-                }
-
-                let depts = {};
-                employees.forEach(emp => {
-                    let d = emp.department ? emp.department.trim() : 'General';
-                    if (!currentSignifiDeptFilters.includes('All') && !currentSignifiDeptFilters.includes(d)) return;
-                    if (!depts[d]) depts[d] = [];
-                    depts[d].push(emp);
+                let filteredEmps = empsSnap.filter(e => {
+                    let d = e.department ? e.department.trim() : 'General';
+                    return currentSignifiDeptFilters.includes('All') || currentSignifiDeptFilters.includes(d);
                 });
 
-                const sortVal = document.getElementById('signifi-report-sort').value;
-                const viewMode = document.getElementById('signifi-report-view-mode').value;
-
-                let orderedDepts = Object.keys(depts).sort();
-                let flatEmps = [];
-                orderedDepts.forEach(d => {
-                    depts[d].sort((a,b) => {
-                        if (sortVal === 'name_asc') return (a.full_name || '').localeCompare(b.full_name || '');
-                        if (sortVal === 'name_desc') return (b.full_name || '').localeCompare(a.full_name || '');
-                        if (sortVal === 'newest') return (b.created_at || 0) - (a.created_at || 0);
-                        if (sortVal === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
-                        return 0;
-                    });
-                    flatEmps.push(...depts[d]);
-                });
-
-                if (flatEmps.length === 0) return container.innerHTML = "<p>No employees match the selected filters.</p>";
-
-                let html = '<table id="signifi-summary-table" class="report-table" style="white-space: nowrap; border-collapse: collapse; width: 100%; border: 2px solid #000; font-family: Calibri, sans-serif; font-size: 14px;">';
-                
-                html += '<tr><th rowspan="2" style="background: #e6e6e6; border: 1px solid #000; padding: 8px; text-align: left;">Date</th>';
-                orderedDepts.forEach(d => html += `<th colspan="${depts[d].length}" style="background: #e6e6e6; border: 1px solid #000; padding: 8px; text-align: center;">${d}</th>`);
-                html += '<th rowspan="2" style="background: #e6e6e6; border: 1px solid #000; padding: 8px; min-width: 150px;">Note</th></tr><tr>';
-
-                flatEmps.forEach(emp => html += `<th style="background: #e6e6e6; border: 1px solid #000; padding: 8px; text-align: center;">${emp.full_name}</th>`);
-                html += '</tr>';
-
-                let weeklyDays = {}, weeklyExtra = {}, grandDays = {}, grandExtra = {};
-                flatEmps.forEach(e => { weeklyDays[e.employee_id] = 0; weeklyExtra[e.employee_id] = 0; grandDays[e.employee_id] = 0; grandExtra[e.employee_id] = 0; });
-
-                const parseTimeStr = (str) => {
-                    if(!str) return 0;
-                    str = str.toString();
-                    if (str.includes(':')) { let p = str.split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); }
-                    let num = parseFloat(str);
-                    if (!isNaN(num)) return Math.round(num * 60);
+                filteredEmps.sort((a, b) => {
+                    if (sortVal === 'name_asc') return (a.full_name || '').localeCompare(b.full_name || '');
+                    if (sortVal === 'name_desc') return (b.full_name || '').localeCompare(a.full_name || '');
+                    if (sortVal === 'newest') return (b.created_at || 0) - (a.created_at || 0);
+                    if (sortVal === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
                     return 0;
-                };
+                });
 
-                for (let i = 0; i < rangeDates.length; i++) {
-                    let d = rangeDates[i];
-                    let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                    let displayDate = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-                    let isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    let bgDate = isWeekend ? 'background-color: #bfbfbf;' : 'background-color: #ffffff;';
+                const { data: overridesSnap } = await supabaseClient.from('timesheet_overrides').select('*').gte('date', startStr).lte('date', endStr);
+                const overridesMap = {};
+                if(overridesSnap) overridesSnap.forEach(o => overridesMap[o.id] = o);
 
-                    html += `<tr><td style="border: 1px solid #000; text-align: left; padding-left: 10px; ${bgDate}">${displayDate}</td>`;
+                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif;">
+                    <thead>
+                        <tr style="background-color:#bfbfbf;">
+                            <th colspan="9" class="report-header-title">Signifi Summary Report (${startStr} to ${endStr})</th>
+                        </tr>
+                        <tr style="background-color:#d9d9d9; font-weight:bold;">
+                            <th>S.NO.</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Pay Type</th>
+                            <th>Worked Days / Hours</th>
+                            <th>Extra Hours</th>
+                            <th>Leaves Used (Range)</th>
+                            <th>Vacation Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
-                    flatEmps.forEach(emp => {
-                        let tIn = "", tOut = "", tBreak = "", tTotal = "";
-                        let dayData = (shiftData[emp.employee_id] && shiftData[emp.employee_id][dateStr]) ? shiftData[emp.employee_id][dateStr] : null;
-                        let override = overridesData[emp.employee_id + "_" + dateStr];
-                        let isHourly = (emp.pay_type === 'Hourly');
+                filteredEmps.forEach((emp, idx) => {
+                    let workedCount = 0;
+                    let extraMins = 0;
+                    let leavesCount = 0;
 
-                        if (dayData && dayData.in) {
-                            let roundedIn = new Date(dayData.in);
-                            if ((roundedIn.getHours() === 8 && roundedIn.getMinutes() >= 30) || (roundedIn.getHours() === 9 && roundedIn.getMinutes() <= 14)) roundedIn.setHours(9, 0, 0, 0);
-                            tIn = roundedIn.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-
-                            if (dayData.out) {
-                                let roundedOut = new Date(dayData.out);
-                                if ((roundedOut.getHours() === 16 && roundedOut.getMinutes() >= 50) || (roundedOut.getHours() === 17 && roundedOut.getMinutes() <= 14)) roundedOut.setHours(17, 0, 0, 0);
-                                tOut = roundedOut.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-
-                                let diffMins = Math.floor((roundedOut - roundedIn) / 60000);
-
-                                if (isHourly) {
-                                    tTotal = `${Math.floor(diffMins / 60)}:${(diffMins % 60).toString().padStart(2, '0')}`;
-                                } else {
-                                    if (diffMins >= 480) { tTotal = "Full Day"; let ext = diffMins - 480; if (ext > 0) tBreak = `${Math.floor(ext / 60)}:${(ext % 60).toString().padStart(2, '0')}`; }
-                                    else tTotal = `${Math.floor(diffMins / 60)}:${(diffMins % 60).toString().padStart(2, '0')}`;
-                                }
-                            } else tOut = "Missed";
-                        }
-
-                        if (override) {
-                            if (override.in_time !== undefined && override.in_time !== "") tIn = override.in_time;
-                            if (override.out_time !== undefined && override.out_time.toLowerCase() !== "missed" && override.out_time !== "") tOut = override.out_time;
-                            if (override.break_time !== undefined) tBreak = override.break_time;
-                            if (override.total_time !== undefined) tTotal = override.total_time;
-                        }
-
-                        if (tIn && tOut && tOut.toLowerCase() !== "missed" && (!override || override.total_time === undefined)) {
-                            let inM = parseTimeStr(tIn), outM = parseTimeStr(tOut), diff = Math.max(0, outM - inM);
-
-                            if (isHourly) tTotal = `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
-                            else {
-                                if (diff >= 480) { tTotal = "Full Day"; let ext = diff - 480; if (ext > 0) tBreak = `${Math.floor(ext / 60)}:${(ext % 60).toString().padStart(2, '0')}`; }
-                                else tTotal = `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
+                    for (let id in overridesMap) {
+                        let o = overridesMap[id];
+                        if (o.emp_id === emp.employee_id) {
+                            let tVal = (o.total_time || "").toLowerCase();
+                            if (tVal === 'full day' || tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
+                                workedCount++;
+                            }
+                            if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu')) {
+                                leavesCount++;
+                            }
+                            if (o.break_time && o.break_time.includes(':')) {
+                                let parts = o.break_time.split(':');
+                                extraMins += parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
                             }
                         }
-
-                        let tTotalLower = tTotal.toString().toLowerCase();
-                        let countsAsFullDay = (tTotalLower === 'full day' || tTotalLower.includes('vacation') || tTotalLower.includes('sick') || tTotalLower.includes('paid lieu') || tTotalLower.includes('stat holiday'));
-
-                        if (isHourly) {
-                            let m = 0;
-                            if (countsAsFullDay) { m = 480; weeklyDays[emp.employee_id] += 1; grandDays[emp.employee_id] += 1; } 
-                            else if (tTotal && !tTotalLower.includes('off') && !tTotalLower.includes('weekend')) {
-                                m = parseTimeStr(tTotal);
-                                if (m > 0) { weeklyDays[emp.employee_id] += 1; grandDays[emp.employee_id] += 1; }
-                            }
-                            weeklyExtra[emp.employee_id] += m; grandExtra[emp.employee_id] += m;
-                        } else {
-                            if (countsAsFullDay) { weeklyDays[emp.employee_id] += 1; grandDays[emp.employee_id] += 1; } 
-                            else if (tTotal && !tTotalLower.includes('off') && !tTotalLower.includes('weekend')) {
-                                let m = parseTimeStr(tTotal);
-                                if (m > 0) { weeklyDays[emp.employee_id] += 1; grandDays[emp.employee_id] += 1; }
-                            }
-                            if (tBreak) { let m = parseTimeStr(tBreak); weeklyExtra[emp.employee_id] += m; grandExtra[emp.employee_id] += m; }
-                        }
-
-                        let cellBg = isWeekend ? "#bfbfbf" : "#ffffff";
-                        let cellColor = "#000000";
-
-                        if (tTotalLower.includes('off') || tTotalLower.includes('vacation') || tTotalLower.includes('stat holiday')) { cellBg = "#c65911"; cellColor = "white"; } 
-                        else if (tTotalLower === "weekend" || (isWeekend && tTotal === "")) { tTotal = "Weekend"; cellBg = "#bfbfbf"; } 
-                        else if (isWeekend && tTotal !== "" && tTotal !== "Weekend") { cellBg = "#e2efda"; }
-
-                        let displayStr = tTotal;
-                        if (displayStr.toString().includes(':')) { let parts = displayStr.split(':'); let dec = parseInt(parts[0]) + (parseInt(parts[1])/60); displayStr = Math.round(dec * 100) / 100; }
-
-                        html += `<td style="border: 1px solid #000; text-align: center; background-color: ${cellBg}; color: ${cellColor}; font-weight: bold;">${displayStr}</td>`;
-                    });
-                    
-                    html += '<td style="border: 1px solid #000; background-color: #e6e6e6;"></td></tr>';
-
-                    if (viewMode === 'weekly' && (d.getDay() === 0 || i === rangeDates.length - 1)) {
-                        html += `<tr style="background: #38761d; color: white; font-weight: bold;"><td style="border: 1px solid #000; text-align: left; padding-left: 10px;">Total full days</td>`;
-                        flatEmps.forEach(emp => html += `<td style="border: 1px solid #000; text-align: center;">${weeklyDays[emp.employee_id]}</td>`);
-                        html += '<td style="border: 1px solid #000;"></td></tr>';
-
-                        html += `<tr style="background: #38761d; color: white; font-weight: bold;"><td style="border: 1px solid #000; text-align: left; padding-left: 10px;">Total hours or / Extra hours</td>`;
-                        flatEmps.forEach(emp => {
-                            let decimalHrs = Math.round((weeklyExtra[emp.employee_id] / 60) * 100) / 100;
-                            html += `<td style="border: 1px solid #000; text-align: center;">${decimalHrs > 0 ? decimalHrs : "0"}</td>`;
-                            weeklyDays[emp.employee_id] = 0; weeklyExtra[emp.employee_id] = 0;
-                        });
-                        html += '<td style="border: 1px solid #000;"></td></tr>';
                     }
-                }
-                
-                if (viewMode === 'bottom') {
-                    html += `<tr style="background: #38761d; color: white; font-weight: bold;"><td style="border: 1px solid #000; text-align: left; padding-left: 10px;">Total full days</td>`;
-                    flatEmps.forEach(emp => html += `<td style="border: 1px solid #000; text-align: center;">${grandDays[emp.employee_id]}</td>`);
-                    html += '<td style="border: 1px solid #000;"></td></tr>';
 
-                    html += `<tr style="background: #38761d; color: white; font-weight: bold;"><td style="border: 1px solid #000; text-align: left; padding-left: 10px;">Total hours or / Extra hours</td>`;
-                    flatEmps.forEach(emp => {
-                        let decimalHrs = Math.round((grandExtra[emp.employee_id] / 60) * 100) / 100;
-                        html += `<td style="border: 1px solid #000; text-align: center;">${decimalHrs > 0 ? decimalHrs : "0"}</td>`;
-                    });
-                    html += '<td style="border: 1px solid #000;"></td></tr>';
-                }
+                    let extraFormatted = `${Math.floor(extraMins/60)}:${(extraMins%60).toString().padStart(2, '0')}`;
+                    let vacRem = `${(emp.vacation_total || 0) - (emp.vacation_used || 0)} / ${emp.vacation_total || 0}`;
 
-                html += `<tr><th style="border: 1px solid #000; background: #fce4d6; padding: 8px; text-align: center;">Note</th>`;
-                html += `<td colspan="${flatEmps.length}" style="border: 1px solid #000; background: #ffffff; text-align: left; padding-left: 10px;" contenteditable="true">Click here to type a note before exporting...</td><td style="border: 1px solid #000;"></td></tr>`;
-                html += '</table>';
+                    html += `<tr>
+                        <td><strong>${idx + 1}</strong></td>
+                        <td>${emp.employee_id}</td>
+                        <td style="text-align:left; padding-left:10px;"><strong>${emp.full_name}</strong></td>
+                        <td>${emp.department}</td>
+                        <td>${emp.pay_type || 'Salaried'}</td>
+                        <td>${emp.pay_type === 'Hourly' ? workedCount * 8 + ' Hours' : workedCount + ' Days'}</td>
+                        <td>${extraFormatted}</td>
+                        <td>${leavesCount} Days</td>
+                        <td>${vacRem}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table>`;
                 container.innerHTML = html;
 
-            } catch(e) { container.innerHTML = `<p style="color:red;">Error loading summary: ${e.message}</p>`; }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<p style="color:red;">Error loading Signifi summary: ${err.message}</p>`;
+            }
         }
 
         function exportSummaryToExcel() {
-            const table = document.getElementById('signifi-summary-table');
-            if (!table) return alert("Please generate the report first.");
+            const container = document.getElementById('summary-container');
+            const table = container.querySelector('table');
+            if (!table) return alert("No summary report data to export.");
 
-            const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>table { border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt; text-align: center; vertical-align: middle; } th, td { border: 1px solid #000000; padding: 4px; }</style></head><body>${table.outerHTML}</body></html>`;
-
-            const blob = new Blob([template], { type: 'application/vnd.ms-excel' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            
-            const startD = document.getElementById('summary-start').value;
-            const endD = document.getElementById('summary-end').value;
-            link.download = `Signifi_Summary_${startD}_to_${endD}.xls`;
-            link.click();
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(table);
+            XLSX.utils.book_append_sheet(wb, ws, "Signifi Summary");
+            const startStr = document.getElementById('summary-start').value || 'start';
+            const endStr = document.getElementById('summary-end').value || 'end';
+            XLSX.writeFile(wb, `Signifi_Summary_${startStr}_to_${endStr}.xlsx`);
         }
     </script>
 </body>
