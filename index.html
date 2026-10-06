@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Up Vision Clock IN & OUT - Supabase Edition</title>
-    <!-- Page Favicon -->
+    <title>Up Vision Clock IN & OUT</title>
+    <!-- Page Thumbnail/Favicon -->
     <link rel="icon" type="image/png" href="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true">
+    
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!-- JsBarcode for Barcode Generation -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS (XLSX) for Excel Export (Fallback/Raw Exports) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     
@@ -24,7 +24,7 @@
             overflow: hidden;
         }
         
-        /* Header Bar */
+        /* --- KIOSK HOME SCREEN UI FIXES --- */
         .top-header-bar {
             position: absolute; top: 0; left: 0; width: 100%; height: 80px;
             background-color: #8b1d24;
@@ -42,18 +42,27 @@
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .top-center-logo { max-height: 45px; object-fit: contain; }
+        .top-center-logo {
+            max-height: 45px;
+            object-fit: contain;
+        }
         
+        .bottom-title {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            text-align: center; font-size: 2.2rem; font-weight: 900;
+            color: #111; z-index: 10; margin: 0; letter-spacing: 1px;
+        }
+
         .vending-machine-bg { 
             position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); 
             height: 50vh; z-index: 1; pointer-events: none; opacity: 0.6; 
         }
         .vending-machine-bg img { height: 100%; object-fit: contain; }
-
-        /* DB Connection Status Indicator */
+        
+        /* Dashboard DB Status Indicator */
         #connection-status { position: absolute; top: 35px; right: 175px; width: 16px; height: 16px; border-radius: 50%; background-color: #ffc107; z-index: 11; box-shadow: 0 0 5px rgba(0,0,0,0.2); border: 2px solid #fff; transition: 0.3s; }
         
-        /* Admin Button */
+        /* Admin Settings Icon */
         #admin-btn { position: absolute; top: 24px; right: 30px; background: transparent; border: none; color: #ffffff; cursor: pointer; transition: 0.2s; z-index: 12; padding: 0; display: flex; align-items: center; justify-content: center; }
         #admin-btn:hover { transform: rotate(90deg); color: #f4f7f6; }
         
@@ -82,7 +91,7 @@
         
         /* Admin Dashboard */
         #admin-view { display: none; width: 100%; height: 100%; background: #f4f7f6; position: absolute; top: 0; left: 0; z-index: 100; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .admin-header { display: flex; gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .admin-header { display: flex; gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .admin-header button { padding: 12px 20px; border: none; background: #e9ecef; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 1rem; }
         .admin-header button.active { background: #007bff; color: white; }
         .admin-header button.exit { background: #dc3545; color: white; margin-left: auto; }
@@ -93,7 +102,6 @@
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.1rem; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-        
         button.action-btn { background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
         button.action-btn:hover { background: #218838; }
         button.small-btn { padding: 6px 12px; font-size: 0.9rem; border-radius: 4px; border: none; cursor: pointer; color: white; margin: 2px; }
@@ -101,19 +109,20 @@
         .btn-print { background-color: #17a2b8; }
         .btn-delete { background-color: #dc3545; }
         
-        /* Filter Tabs */
+        /* Sub-Tabs for Employee Filters */
         .filter-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 16px; border: 1px solid #ccc; background: #e9ecef; cursor: pointer; border-radius: 4px; font-weight: bold; color: #555; margin-bottom: 5px; }
         .filter-btn.active { background: #17a2b8; color: white; border-color: #17a2b8; }
         
-        /* Report Tables */
-        .report-controls { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        /* Report & Data Table Styles */
+        .report-controls { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; justify-content: space-between; }
         .report-table { width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 14px; text-align: center; vertical-align: middle; margin-bottom: 40px; border: 2px solid #000; }
         .report-table th, .report-table td { border: 1px solid #000; padding: 6px; text-align: center; vertical-align: middle; }
         .report-header-title { background-color: #bfbfbf; font-weight: bold; font-size: 18px; padding: 10px !important; border: 2px solid #000; text-transform: capitalize; }
         .text-green { color: #00b050; font-weight: bold; }
         .row-break { color: #dc3545; }
         
+        /* Interactive Input Styles for Report */
         .note-input, .time-input { width: 100%; border: 1px solid transparent; text-align: center; background: transparent; font-family: Calibri, sans-serif; font-size: inherit; padding: 4px; box-sizing: border-box; color: inherit; }
         .note-input:hover, .note-input:focus, .time-input:hover, .time-input:focus { border: 1px solid #ccc; background: #fff; outline: none; }
         
@@ -126,16 +135,16 @@
 </head>
 <body>
 
-    <!-- KIOSK HEADER -->
+    <!-- KIOSK HEADER BAR -->
     <div class="top-header-bar">
         <img src="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true" alt="Up Vision Logo" class="top-left-logo">
         <div class="top-center-logo-wrapper">
-            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Signifi Logo Missing'; this.style.padding='5px';">
+            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Logo missing. Place image_1fb393.png in the same folder as index.html.'; this.style.padding='5px';">
         </div>
     </div>
     
-    <!-- Connection Status & Admin Trigger -->
-    <div id="connection-status" title="Connecting to Supabase..."></div>
+    <!-- Status Indicator -->
+    <div id="connection-status" title="Checking database connection..."></div>
     <button id="admin-btn" onclick="showLoginModal()" title="Admin Settings">
         <span class="material-symbols-outlined" style="font-size: 32px;">settings</span>
     </button>
@@ -144,7 +153,7 @@
         <img src="vending_machine.png" alt="" onerror="this.style.display='none';">
     </div>
 
-    <!-- Kiosk Main View -->
+    <!-- Kiosk View -->
     <div id="kiosk-view">
         <div id="clock">00:00:00</div>
         <div id="date-display">Date</div>
@@ -310,7 +319,7 @@
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="new-admin-pass">
+                <input type="text" id="new-admin-pass">
             </div>
             <div class="form-group">
                 <label>Account Role</label>
@@ -333,7 +342,7 @@
             <button class="tab-btn" onclick="switchTab('history')">Shift History</button>
             <button class="tab-btn" onclick="switchTab('reports')">Timesheet Report</button>
             <button class="tab-btn" onclick="switchTab('signifi-report')">Signifi Report</button>
-            <button class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')">Settings</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
             <button class="exit" onclick="exitAdmin()">Exit to Kiosk</button>
         </div>
 
@@ -477,7 +486,7 @@
                     <label style="font-size: 1.1rem;"><strong>Mark Stat Holiday:</strong></label>
                     <input type="date" id="stat-holiday-date" style="padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
                     <button class="action-btn" onclick="applyStatHoliday()" style="background-color: #17a2b8;">Apply to Report</button>
-                    <span style="color: #666; font-size: 0.95rem; margin-left: 10px;">(Sets 'Stat Holiday' for Signifi and 'Off' for Agencies)</span>
+                    <span style="color: #666; font-size: 0.95rem; margin-left: 10px;">(Sets 'Stat Holiday' for Signifi and 'Off' for Agencies on this date)</span>
                 </div>
             </div>
             
@@ -535,7 +544,7 @@
         <div id="settings" class="tab-content">
             <h2 style="margin-top: 0;">Account Settings</h2>
             
-            <div style="max-width: 400px; margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <div style="max-width: 400px; margin-bottom: 40px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
                 <h3 style="margin-top:0;">Change My Password</h3>
                 <div class="form-group">
                     <label>New Password</label>
@@ -544,20 +553,6 @@
                 <button class="action-btn" onclick="changeMyPassword()" style="width: 100%;">Update Password</button>
             </div>
 
-            <div style="max-width: 600px; margin-bottom: 40px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                <h3 style="margin-top:0;">Supabase Database Connection</h3>
-                <div class="form-group">
-                    <label>Supabase URL</label>
-                    <input type="text" id="cfg-supabase-url">
-                </div>
-                <div class="form-group">
-                    <label>Supabase Anon Key</label>
-                    <input type="password" id="cfg-supabase-key">
-                </div>
-                <button class="action-btn" onclick="saveSupabaseConfig()" style="width: 100%;">Save Credentials & Test Connection</button>
-            </div>
-
-            <!-- Super Admin Only Section -->
             <div id="super-admin-section" style="display:none; border-top: 2px solid #ccc; padding-top: 30px;">
                 <div class="report-controls">
                     <h3 style="margin: 0; font-size: 1.8rem;">Manage Admin Users</h3>
@@ -573,16 +568,23 @@
     </div>
 
     <script>
-        // === DIRECT SUPABASE CREDENTIALS CONFIGURATION ===
+        // === SUPABASE INITIALIZATION ===
         const DIRECT_SUPABASE_URL = "https://gruqfhpxsovbcqyehqvp.supabase.co";
         const DIRECT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydXFmaHB4c292YmNxeWVocXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTE2NjksImV4cCI6MjEwNjQ4NzY2OX0._eOp4dppOR-4V0Kg6J2QiFWdbtAm9UeQmMSQzgK6fGU";
+        const supabaseClient = supabase.createClient(DIRECT_SUPABASE_URL, DIRECT_SUPABASE_KEY);
 
-        let SUPABASE_URL = localStorage.getItem('supabase_url') || DIRECT_SUPABASE_URL;
-        let SUPABASE_KEY = localStorage.getItem('supabase_key') || DIRECT_SUPABASE_KEY;
+        // Database Connection Status Check
+        const statusCircle = document.getElementById('connection-status');
+        supabaseClient.from('employees').select('id').limit(1).then(({ data, error }) => {
+            if (error) {
+                statusCircle.style.backgroundColor = '#dc3545'; 
+                statusCircle.title = "Database Error: " + error.message;
+            } else {
+                statusCircle.style.backgroundColor = '#28a745'; 
+                statusCircle.title = "Database Connected";
+            }
+        });
 
-        let supabaseClient = null;
-
-        // Helper function for Excel Column Letters
         function getColLtr(n) {
             let s = "";
             while(n >= 0) {
@@ -592,72 +594,19 @@
             return s;
         }
 
-        // Global state vars
+        // Global Filter State Variables
         let currentReportFilter = 'All'; 
         let currentDeptFilters = ['All']; 
         let currentSignifiDeptFilters = ['All']; 
         let availableDepartments = [];
+        
         let currentEmpAgencyFilter = 'All';
         let currentEmpDeptFilter = 'All';
         let viewingLaidOff = false;
-        let globalHistoryData = []; 
 
-        let currentAdminId = null;
-        let currentAdminRole = null;
+        let globalHistoryData = [];
 
-        // === SUPABASE INITIALIZATION ===
-        function initSupabase() {
-            const statusDiv = document.getElementById('connection-status');
-            if (SUPABASE_URL && SUPABASE_KEY) {
-                try {
-                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    supabaseClient.from('employees').select('employee_id').limit(1).then(({ error }) => {
-                        if (!error) {
-                            statusDiv.style.backgroundColor = '#28a745';
-                            statusDiv.title = 'Connected successfully to Supabase';
-                        } else {
-                            throw error;
-                        }
-                    }).catch((e) => {
-                        statusDiv.style.backgroundColor = '#dc3545';
-                        statusDiv.title = 'Supabase Query Error: ' + e.message;
-                    });
-                    return true;
-                } catch (e) {
-                    console.error('Supabase Init Error:', e);
-                    statusDiv.style.backgroundColor = '#dc3545';
-                    statusDiv.title = 'Supabase Connection Failed';
-                    return false;
-                }
-            } else {
-                statusDiv.style.backgroundColor = '#ffc107';
-                statusDiv.title = 'Supabase Config Required';
-                return false;
-            }
-        }
-
-        function saveSupabaseConfig() {
-            const url = document.getElementById('cfg-supabase-url').value.trim();
-            const key = document.getElementById('cfg-supabase-key').value.trim();
-            if (!url || !key) return alert('Please enter both Supabase URL and Anon Key.');
-
-            localStorage.setItem('supabase_url', url);
-            localStorage.setItem('supabase_key', key);
-            SUPABASE_URL = url;
-            SUPABASE_KEY = key;
-
-            if (initSupabase()) {
-                alert('Supabase credentials updated and connected successfully!');
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initSupabase();
-            document.getElementById('cfg-supabase-url').value = SUPABASE_URL;
-            document.getElementById('cfg-supabase-key').value = SUPABASE_KEY;
-        });
-
-        // === LIVE TIMESHEET RECALCULATION ENGINE (UI) ===
+        // LIVE TIMESHEET RECALCULATION ENGINE
         window.recalcTime = function(gIdx, eIdx, colIdx, numCols, empType, payType, changedField = '') {
             const isSignifi = (empType === 'Signifi');
             const isHourly = (payType === 'Hourly');
@@ -711,14 +660,17 @@
                         if (diff >= 480) {
                             newTotal = "Full Day";
                             let ext = diff - 480;
-                            newThird = ext > 0 ? formatTime(ext) : "";
+                            if (ext > 0) newThird = formatTime(ext);
+                            else newThird = "";
                         } else {
                             newTotal = formatTime(diff);
                             newThird = "";
                         }
                     }
                 } else {
-                    if (diff > 240 && thirdVal === "") newThird = "0:45";
+                    if (diff > 240 && thirdVal === "") {
+                        newThird = "0:45";
+                    }
                     let bM = parseTime(newThird);
                     newTotal = formatTime(Math.max(0, diff - bM));
                 }
@@ -737,83 +689,91 @@
                 }
             }
             
-            totalInput.style.color = (totalInput.value.trim().toLowerCase() === 'off') ? 'red' : 'inherit';
-            if (newThird !== thirdVal) breakInput.value = newThird;
+            if (totalInput.value.trim().toLowerCase() === 'off') {
+                totalInput.style.color = 'red';
+            } else {
+                totalInput.style.color = 'inherit';
+            }
+            
+            if (newThird !== thirdVal) {
+                breakInput.value = newThird;
+            }
 
-            // Update Aggregates
             if (isSignifi) {
                 if (isHourly) {
                     let totalMins = 0;
                     let leavesList = [];
                     for(let i=0; i<numCols; i++) {
-                        let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
-                        if(!tEl) continue;
-                        let tVal = tEl.value.trim().toLowerCase();
+                        let cell = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                        if (!cell) continue;
+                        let tVal = cell.value.trim().toLowerCase();
                         if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
                             totalMins += 480; 
-                            leavesList.push(tEl.value.trim());
+                            leavesList.push(cell.value.trim());
                         } else if (!tVal.includes('off') && tVal !== "") {
                             totalMins += parseTime(tVal);
                         }
                     }
-                    const fdEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
-                    if(fdEl) fdEl.innerText = `${formatTime(totalMins)} Hours`;
-                    const exEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
-                    if(exEl) exEl.innerText = ""; 
+                    const fullDaysEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
+                    if (fullDaysEl) fullDaysEl.innerText = `${formatTime(totalMins)} Hours`;
+                    
+                    const extraHrsEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
+                    if (extraHrsEl) extraHrsEl.innerText = ""; 
                     
                     let leaveSummary = {};
                     leavesList.forEach(l => {
                         let key = l.split('-')[0];
                         leaveSummary[key] = (leaveSummary[key] || 0) + 1;
                     });
-                    const lvEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
-                    if(lvEl) lvEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
+                    const leavesEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
+                    if (leavesEl) leavesEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
                 } else {
                     let fullDaysCount = 0;
                     let extraHrsMins = 0;
                     let leavesList = [];
                     
                     for(let i=0; i<numCols; i++) {
-                        let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
-                        let bEl = document.getElementById(`break_${gIdx}_${eIdx}_${i}`);
-                        if(!tEl) continue;
+                        let tCell = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                        let bCell = document.getElementById(`break_${gIdx}_${eIdx}_${i}`);
+                        if (!tCell || !bCell) continue;
 
-                        let tVal = tEl.value.trim().toLowerCase();
-                        let extVal = bEl ? bEl.value.trim() : "";
+                        let tVal = tCell.value.trim().toLowerCase();
+                        let extVal = bCell.value.trim();
                         
                         if (tVal === "full day" || tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
                             fullDaysCount++;
                         }
                         if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                            leavesList.push(tEl.value.trim());
+                            leavesList.push(tCell.value.trim());
                         }
                         extraHrsMins += parseTime(extVal);
                     }
                     
-                    const fdEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
-                    if(fdEl) fdEl.innerText = `${fullDaysCount} Days`;
-                    const exEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
-                    if(exEl) exEl.innerText = formatTime(extraHrsMins) || "0:00";
+                    const fullDaysEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
+                    if (fullDaysEl) fullDaysEl.innerText = `${fullDaysCount} Days`;
+                    
+                    const extraHrsEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
+                    if (extraHrsEl) extraHrsEl.innerText = formatTime(extraHrsMins) || "0:00";
                     
                     let leaveSummary = {};
                     leavesList.forEach(l => {
                         let key = l.split('-')[0];
                         leaveSummary[key] = (leaveSummary[key] || 0) + 1;
                     });
-                    const lvEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
-                    if(lvEl) lvEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
+                    const leavesEl = document.getElementById(`leaves_${gIdx}_${eIdx}`);
+                    if (leavesEl) leavesEl.innerText = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ');
                 }
             } else {
                 let empTotal = 0;
                 for(let i=0; i<numCols; i++) {
-                    let tEl = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
-                    if(tEl) empTotal += parseTime(tEl.value.trim());
+                    let tCell = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
+                    if (!tCell) continue;
+                    empTotal += parseTime(tCell.value.trim());
                 }
-                const etEl = document.getElementById(`emptotal_${gIdx}_${eIdx}`);
-                if(etEl) etEl.innerText = formatTime(empTotal);
+                const empTotalEl = document.getElementById(`emptotal_${gIdx}_${eIdx}`);
+                if (empTotalEl) empTotalEl.innerText = formatTime(empTotal);
             }
 
-            // Group Totals
             if (isSignifi) {
                 let grpFullDays = 0;
                 let grpExtraHrs = 0;
@@ -823,108 +783,112 @@
                 document.querySelectorAll(`.group-fulldays-${gIdx}`).forEach(el => {
                     let txt = el.innerText || "";
                     if (txt.includes('Days')) {
-                        grpFullDays += parseInt(txt, 10) || 0;
+                        grpFullDays += parseInt(txt) || 0;
                         hasSalaried = true;
                     } else if (txt.includes('Hours')) {
                         hasHourly = true;
                     }
                 });
                 document.querySelectorAll(`.group-extrahrs-${gIdx}`).forEach(el => {
-                    grpExtraHrs += parseTime(el.innerText || "");
+                    let txt = el.innerText || "";
+                    grpExtraHrs += parseTime(txt);
                 });
                 
-                const gtFd = document.getElementById(`grouptotal_fulldays_${gIdx}`);
-                if (gtFd) gtFd.innerText = (hasSalaried && !hasHourly) ? `${grpFullDays} Days` : "-"; 
-                const gtEx = document.getElementById(`grouptotal_extrahrs_${gIdx}`);
-                if (gtEx) gtEx.innerText = formatTime(grpExtraHrs) || "";
+                if(document.getElementById(`grouptotal_fulldays_${gIdx}`)) {
+                    if (hasSalaried && !hasHourly) {
+                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = `${grpFullDays} Days`;
+                    } else {
+                        document.getElementById(`grouptotal_fulldays_${gIdx}`).innerText = "-"; 
+                    }
+                }
+                if(document.getElementById(`grouptotal_extrahrs_${gIdx}`)) {
+                    document.getElementById(`grouptotal_extrahrs_${gIdx}`).innerText = formatTime(grpExtraHrs) || "";
+                }
             } else {
                 let groupTotal = 0;
                 document.querySelectorAll(`.group-emptotal-${gIdx}`).forEach(el => {
                     groupTotal += parseTime(el.innerText);
                 });
-                const gtEl = document.getElementById(`grouptotal_${gIdx}`);
-                if(gtEl) gtEl.innerText = formatTime(groupTotal);
+                if(document.getElementById(`grouptotal_${gIdx}`)) document.getElementById(`grouptotal_${gIdx}`).innerText = formatTime(groupTotal);
             }
         };
 
-        // === AUTO PUNCH OUT MISSING SHIFTS AT 11:59 PM (Supabase) ===
+        // AUTO PUNCH OUT MISSING SHIFTS AT 11:59 PM
         async function runDailyAutoPunchOut(currentDate) {
             try {
-                const startOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-                const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59, 999);
+                const startOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).toISOString();
+                const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59, 999).toISOString();
                 const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
                 
-                const { data: emps, error: eErr } = await supabaseClient.from('employees').select('employee_id, is_laid_off').eq('is_laid_off', false);
-                if (eErr || !emps) return;
-                
-                const allEmpIds = emps.map(e => e.employee_id);
+                const { data: empsData } = await supabaseClient.from('employees').select('id, isLaidOff');
+                const allEmpIds = [];
+                (empsData || []).forEach(emp => {
+                    if (!emp.isLaidOff) allEmpIds.push(emp.id);
+                });
 
-                const { data: overrides } = await supabaseClient.from('timesheet_overrides').select('emp_id').eq('date', dateStr);
+                const { data: overrides } = await supabaseClient.from('timesheet_overrides').select('empId').eq('date', dateStr);
                 const existingOverrides = {};
-                if (overrides) overrides.forEach(o => existingOverrides[o.emp_id] = true);
+                (overrides || []).forEach(o => existingOverrides[o.empId] = true);
 
-                const { data: shifts } = await supabaseClient.from('scan_logs')
+                const { data: shifts } = await supabaseClient.from('shifts')
                     .select('*')
-                    .gte('scanned_at', startOfDay.toISOString())
-                    .lte('scanned_at', endOfDay.toISOString())
-                    .order('scanned_at', { ascending: true });
+                    .gte('timestamp', startOfDay)
+                    .lte('timestamp', endOfDay)
+                    .order('timestamp', { ascending: true });
 
                 const employeeShifts = {};
-                if (shifts) {
-                    shifts.forEach(row => {
-                        if (!employeeShifts[row.employee_id]) employeeShifts[row.employee_id] = [];
-                        employeeShifts[row.employee_id].push(row);
-                    });
-                }
+                (shifts || []).forEach(data => {
+                    if (!employeeShifts[data.employeeId]) {
+                        employeeShifts[data.employeeId] = [];
+                    }
+                    employeeShifts[data.employeeId].push(data);
+                });
 
-                const overridesToUpsert = [];
-                const logsToInsert = [];
+                const newOverrides = [];
+                const newShifts = [];
 
                 for (const empId of allEmpIds) {
                     const empShifts = employeeShifts[empId];
 
                     if (!empShifts || empShifts.length === 0) {
                         if (!existingOverrides[empId]) {
-                            overridesToUpsert.push({
+                            newOverrides.push({
                                 id: `${empId}_${dateStr}`,
-                                emp_id: empId,
+                                empId: empId,
                                 date: dateStr,
-                                in_time: '0',
-                                out_time: '0',
-                                break_time: '0',
-                                total_time: '0'
+                                in: '0',
+                                out: '0',
+                                break: '0',
+                                total: '0'
                             });
                         }
                     } else {
                         const lastPunch = empShifts[empShifts.length - 1]; 
                         if (lastPunch && lastPunch.action === 'IN') {
-                            const autoOutTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 16, 55, 0, 0); 
-                            
-                            if (autoOutTime > new Date(lastPunch.scanned_at)) {
-                                logsToInsert.push({
-                                    employee_id: empId,
+                            const autoOutTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 16, 55, 0, 0).toISOString(); 
+                            if (new Date(autoOutTime) > new Date(lastPunch.timestamp)) {
+                                newShifts.push({
+                                    employeeId: empId,
                                     name: lastPunch.name,
                                     action: 'OUT',
-                                    scanned_at: autoOutTime.toISOString(),
+                                    timestamp: autoOutTime,
                                     type: lastPunch.type || 'Unknown',
                                     department: lastPunch.department || 'Unknown',
-                                    is_auto: true
+                                    isAuto: true
                                 });
                             }
                         }
                     }
                 }
 
-                if (overridesToUpsert.length > 0) await supabaseClient.from('timesheet_overrides').upsert(overridesToUpsert);
-                if (logsToInsert.length > 0) await supabaseClient.from('scan_logs').insert(logsToInsert);
-                
-                console.log("Auto-punchout and Missing-Day zeroing completed for 11:59 PM.");
+                if (newOverrides.length > 0) await supabaseClient.from('timesheet_overrides').upsert(newOverrides);
+                if (newShifts.length > 0) await supabaseClient.from('shifts').insert(newShifts);
             } catch (error) {
                 console.error("Auto punch out failed: ", error);
             }
         }
 
-        // === KIOSK CLOCK & INPUT LOGIC ===
+        // KIOSK CLOCK & INPUT LOGIC
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: true });
@@ -947,10 +911,16 @@
             const adminView = document.getElementById('admin-view');
             const modals = document.querySelectorAll('.modal');
             let isModalOpen = false;
-            modals.forEach(m => { if (m.style.display === 'flex' || m.style.display === 'block') isModalOpen = true; });
+            modals.forEach(m => {
+                if (m.style.display === 'flex' || m.style.display === 'block') {
+                    isModalOpen = true;
+                }
+            });
 
             if (adminView && adminView.style.display !== 'block' && !isModalOpen) {
-                if (document.activeElement !== manualInput) manualInput.focus();
+                if (document.activeElement !== manualInput) {
+                    manualInput.focus();
+                }
             }
         }, 500);
 
@@ -977,30 +947,29 @@
             statusDiv.className = 'status-message';
             statusDiv.innerText = 'Checking Database...';
 
-            if (!supabaseClient) {
-                statusDiv.className = 'status-message error';
-                statusDiv.innerText = 'Database client disconnected.';
-                setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 4000);
-                return;
-            }
-
             try {
-                const { data: empList, error: empErr } = await supabaseClient.from('employees').select('*').eq('employee_id', badgeId);
+                const { data: empDoc, error } = await supabaseClient.from('employees').select('*').eq('id', badgeId).maybeSingle();
                 
-                if (empErr) throw empErr;
-                
-                if (!empList || empList.length === 0) {
+                if (error || !empDoc) {
                     statusDiv.className = 'status-message error';
                     statusDiv.innerText = 'Badge not found. Please contact Admin.';
-                    setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 3000);
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        isProcessingPunch = false; 
+                        manualInput.focus();
+                    }, 3000);
                     return;
                 }
                 
-                pendingEmpData = empList[0];
-                if(pendingEmpData.is_laid_off) {
+                pendingEmpData = empDoc;
+                if(pendingEmpData.isLaidOff) {
                     statusDiv.className = 'status-message error';
                     statusDiv.innerText = 'Badge inactive. Please contact Admin.';
-                    setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 3000);
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        isProcessingPunch = false; 
+                        manualInput.focus();
+                    }, 3000);
                     return;
                 }
                 
@@ -1008,31 +977,28 @@
 
                 const now = new Date();
                 const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                const startOfDayISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
                 
-                const { data: shiftsToday, error: shiftErr } = await supabaseClient
-                    .from('scan_logs')
+                const { data: shiftDocs } = await supabaseClient.from('shifts')
                     .select('*')
-                    .eq('employee_id', badgeId)
-                    .gte('scanned_at', startOfDayISO);
-
-                if(shiftErr) throw shiftErr;
+                    .eq('employeeId', badgeId)
+                    .gte('timestamp', startOfDay);
 
                 let latestRawTime = 0;
                 let lastRawAction = null;
                 let rawIn = false;
                 let rawOut = false;
 
-                if (shiftsToday && shiftsToday.length > 0) {
-                    shiftsToday.forEach(row => {
-                        if (row.scanned_at) {
-                            const timeMs = new Date(row.scanned_at).getTime();
+                if (shiftDocs && shiftDocs.length > 0) {
+                    shiftDocs.forEach(data => {
+                        if (data.timestamp) {
+                            const timeMs = new Date(data.timestamp).getTime();
                             if (timeMs > latestRawTime) {
                                 latestRawTime = timeMs;
-                                lastRawAction = row.action;
+                                lastRawAction = data.action;
                             }
-                            if (row.action === 'IN') rawIn = true;
-                            if (row.action === 'OUT') rawOut = true;
+                            if (data.action === 'IN') rawIn = true;
+                            if (data.action === 'OUT') rawOut = true;
                         }
                     });
 
@@ -1053,14 +1019,14 @@
                     }
                 }
 
-                const { data: override } = await supabaseClient.from('timesheet_overrides').select('*').eq('id', `${badgeId}_${todayStr}`).single();
+                const { data: override } = await supabaseClient.from('timesheet_overrides').select('*').eq('id', `${badgeId}_${todayStr}`).maybeSingle();
 
                 let effIn = rawIn ? "System IN" : "";
                 let effOut = rawOut ? "System OUT" : (rawIn && !rawOut ? "Missed" : "");
 
                 if (override) {
-                    if (override.in_time !== undefined) effIn = override.in_time;
-                    if (override.out_time !== undefined) effOut = override.out_time;
+                    if (override.in !== undefined) effIn = override.in;
+                    if (override.out !== undefined) effOut = override.out;
                 }
 
                 pendingAction = 'IN'; 
@@ -1071,7 +1037,7 @@
                 statusDiv.style.display = 'none'; 
                 document.getElementById('confirm-title').innerText = pendingAction === 'IN' ? 'Punch In' : 'Punch Out';
                 document.getElementById('confirm-title').style.color = pendingAction === 'IN' ? '#28a745' : '#007bff';
-                document.getElementById('confirm-text').innerHTML = `Hello <strong>${pendingEmpData.full_name}</strong>!<br>Are you ready to punch <strong>${pendingAction}</strong>?`;
+                document.getElementById('confirm-text').innerHTML = `Hello <strong>${pendingEmpData.name}</strong>!<br>Are you ready to punch <strong>${pendingAction}</strong>?`;
                 document.getElementById('confirm-modal').style.display = 'flex';
                 document.getElementById('confirm-btn').focus();
 
@@ -1079,33 +1045,40 @@
                 console.error(err);
                 statusDiv.className = 'status-message error';
                 statusDiv.innerText = 'Database Error: ' + err.message;
-                setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 5000);
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                    isProcessingPunch = false; 
+                    manualInput.focus();
+                }, 5000);
             }
         }
 
         async function executePunch() {
             document.getElementById('confirm-modal').style.display = 'none';
-            manualInput.focus(); 
+            manualInput.focus();
             const statusDiv = document.getElementById('status-display');
             
             try {
-                const { error } = await supabaseClient.from('scan_logs').insert([{
-                    employee_id: pendingBadgeId,
-                    name: pendingEmpData.full_name,
+                const { error } = await supabaseClient.from('shifts').insert({
+                    employeeId: pendingBadgeId,
+                    name: pendingEmpData.name,
                     action: pendingAction,
+                    timestamp: new Date().toISOString(),
                     type: pendingEmpData.type,
-                    department: pendingEmpData.department,
-                    scanned_at: new Date().toISOString(),
-                    is_auto: false
-                }]);
+                    department: pendingEmpData.department
+                });
 
                 if (error) throw error;
 
                 statusDiv.style.display = 'block';
                 statusDiv.className = 'status-message success';
-                statusDiv.innerText = pendingAction === 'IN' ? `Welcome, ${pendingEmpData.full_name}! Shift Started.` : `Goodbye, ${pendingEmpData.full_name}! Shift Ended.`;
+                statusDiv.innerText = pendingAction === 'IN' ? `Welcome, ${pendingEmpData.name}! Shift Started.` : `Goodbye, ${pendingEmpData.name}! Shift Ended.`;
                 
-                setTimeout(() => { statusDiv.style.display = 'none'; isProcessingPunch = false; manualInput.focus(); }, 3500);
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                    isProcessingPunch = false; 
+                    manualInput.focus();
+                }, 3500);
 
             } catch (err) {
                 console.error(err);
@@ -1117,7 +1090,10 @@
             }
         }
 
-        // === AUTHENTICATION & LOGIN ===
+        // AUTHENTICATION & LOGIN LOGIC
+        let currentAdminId = null;
+        let currentAdminRole = null;
+
         function showLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
             document.getElementById('admin-password').value = '';
@@ -1126,12 +1102,18 @@
 
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
-            if(id === 'confirm-modal') { isProcessingPunch = false; manualInput.focus(); }
+            if(id === 'confirm-modal') {
+                isProcessingPunch = false; 
+                manualInput.focus();
+            }
             if(id === 'login-modal') manualInput.focus();
         }
 
         function handleLoginEnter(e) {
-            if (e.key === 'Enter') { e.preventDefault(); verifyLogin(); }
+            if (e.key === 'Enter') {
+                e.preventDefault(); 
+                verifyLogin();
+            }
         }
 
         function grantAccess(role, docId) {
@@ -1156,32 +1138,30 @@
             const pass = document.getElementById('admin-password').value.trim();
             
             if (!user || !pass) return alert('Enter both username and password.');
-            if (!supabaseClient) return alert('Supabase client not connected.');
 
             try {
-                const { data: snapshot, error } = await supabaseClient.from('admins').select('*').eq('username', user);
-                if (error) throw error;
+                const { data: admins } = await supabaseClient.from('admins').select('*').eq('username', user);
                 
-                if (snapshot && snapshot.length > 0) {
-                    const adminDoc = snapshot[0];
+                if (admins && admins.length > 0) {
+                    const adminDoc = admins[0];
                     if (adminDoc.password === pass) {
                         grantAccess(adminDoc.role, adminDoc.id);
                     } else {
                         alert("Incorrect Password.");
                     }
                 } else {
-                    const { data: allAdmins } = await supabaseClient.from('admins').select('id');
+                    const { data: allAdmins } = await supabaseClient.from('admins').select('*');
                     if (!allAdmins || allAdmins.length === 0) {
-                        const { data: newDoc, error: insertErr } = await supabaseClient.from('admins').insert([{ username: user, password: pass, role: 'Super Admin' }]).select();
-                        if (insertErr) throw insertErr;
-                        grantAccess('Super Admin', newDoc[0].id);
+                        const { data: newAdmin, error } = await supabaseClient.from('admins').insert({ username: user, password: pass, role: 'Super Admin' }).select().single();
+                        if (error) throw error;
+                        grantAccess('Super Admin', newAdmin.id);
                         alert("Initial Super Admin account created successfully in database!");
                     } else {
                         alert("Invalid Username or Password.");
                     }
                 }
             } catch(err) {
-                alert("Database disconnected or permission denied: " + err.message);
+                alert("Database disconnected or permission denied. Cannot verify login: " + err.message);
             }
         }
 
@@ -1197,7 +1177,7 @@
             document.querySelectorAll('.admin-header .tab-btn').forEach(el => el.classList.remove('active'));
             
             document.getElementById(tabId).classList.add('active');
-            if (event && event.target && event.target.classList) event.target.classList.add('active');
+            event.target.classList.add('active');
             
             if (tabId === 'employees') loadEmployees();
             if (tabId === 'history') loadHistory();
@@ -1207,12 +1187,19 @@
                     let d = new Date();
                     let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
                     d.setDate(diff);
-                    const startY = d.getFullYear(), startM = String(d.getMonth() + 1).padStart(2, '0'), startD = String(d.getDate()).padStart(2, '0');
-                    document.getElementById('report-start').value = `${startY}-${startM}-${startD}`;
                     
-                    let endD = new Date(d); endD.setDate(endD.getDate() + 6);
-                    const endY = endD.getFullYear(), endM = String(endD.getMonth() + 1).padStart(2, '0'), endD_str = String(endD.getDate()).padStart(2, '0');
-                    document.getElementById('report-end').value = `${endY}-${endM}-${endD_str}`;
+                    const startYear = d.getFullYear();
+                    const startMonth = String(d.getMonth() + 1).padStart(2, '0');
+                    const startDay = String(d.getDate()).padStart(2, '0');
+                    document.getElementById('report-start').value = `${startYear}-${startMonth}-${startDay}`;
+                    
+                    let endD = new Date(d);
+                    endD.setDate(endD.getDate() + 6);
+                    
+                    const endYear = endD.getFullYear();
+                    const endMonth = String(endD.getMonth() + 1).padStart(2, '0');
+                    const endDay = String(endD.getDate()).padStart(2, '0');
+                    document.getElementById('report-end').value = `${endYear}-${endMonth}-${endDay}`;
                 }
                 generateReport();
             }
@@ -1221,36 +1208,47 @@
                     let d = new Date();
                     let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
                     d.setDate(diff);
-                    document.getElementById('summary-start').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                    let endD = new Date(d); endD.setDate(endD.getDate() + 6);
-                    document.getElementById('summary-end').value = `${endD.getFullYear()}-${String(endD.getMonth() + 1).padStart(2, '0')}-${String(endD.getDate()).padStart(2, '0')}`;
+                    
+                    const startYear = d.getFullYear();
+                    const startMonth = String(d.getMonth() + 1).padStart(2, '0');
+                    const startDay = String(d.getDate()).padStart(2, '0');
+                    document.getElementById('summary-start').value = `${startYear}-${startMonth}-${startDay}`;
+                    
+                    let endD = new Date(d);
+                    endD.setDate(endD.getDate() + 6);
+                    
+                    const endYear = endD.getFullYear();
+                    const endMonth = String(endD.getMonth() + 1).padStart(2, '0');
+                    const endDay = String(endD.getDate()).padStart(2, '0');
+                    document.getElementById('summary-end').value = `${endYear}-${endMonth}-${endDay}`;
                 }
                 generateSignifiSummary();
             }
         }
 
-        // === USER MANAGEMENT (SETTINGS TAB) ===
+        // USER MANAGEMENT (SETTINGS TAB)
         async function changeMyPassword() {
             const newPass = document.getElementById('new-my-password').value.trim();
             if (!newPass) return alert("Please enter a new password.");
-            if (!currentAdminId) return;
 
             try {
                 const { error } = await supabaseClient.from('admins').update({ password: newPass }).eq('id', currentAdminId);
                 if (error) throw error;
                 alert("Password successfully updated!");
                 document.getElementById('new-my-password').value = '';
-            } catch(e) { alert("Failed to update password. " + e.message); }
+            } catch(e) {
+                alert("Failed to update password. " + e.message);
+            }
         }
 
         async function loadAdminUsers() {
             const tbody = document.getElementById('admin-list-body');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading...</td></tr>';
             try {
-                const { data: snap, error } = await supabaseClient.from('admins').select('*');
-                if(error) throw error;
+                const { data: admins, error } = await supabaseClient.from('admins').select('*');
+                if (error) throw error;
                 tbody.innerHTML = '';
-                snap.forEach(data => {
+                (admins || []).forEach(data => {
                     tbody.innerHTML += `<tr>
                         <td style="font-weight:bold;">${data.username}</td>
                         <td>${data.role}</td>
@@ -1259,7 +1257,9 @@
                         </td>
                     </tr>`;
                 });
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Error loading admins</td></tr>'; }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Error loading admins</td></tr>';
+            }
         }
 
         function openAddAdminModal() {
@@ -1275,40 +1275,59 @@
             if (!u || !p) return alert("Please fill all fields");
 
             try {
-                const { data: existing } = await supabaseClient.from('admins').select('id').eq('username', u);
-                if (existing && existing.length > 0) return alert(`Admin user "${u}" already exists in the database.`);
-                
-                await supabaseClient.from('admins').insert([{ username: u, password: p, role: r }]);
+                const { data: existing } = await supabaseClient.from('admins').select('*').eq('username', u);
+                if (existing && existing.length > 0) {
+                    return alert(`Admin user "${u}" already exists in the database.`);
+                }
+                const { error } = await supabaseClient.from('admins').insert({ username: u, password: p, role: r });
+                if (error) throw error;
                 closeModal('add-admin-modal');
                 loadAdminUsers();
-            } catch (e) { alert("Error saving user: " + e.message); }
+            } catch (e) {
+                alert("Error saving user: " + e.message);
+            }
         }
 
         async function deleteAdmin(id, name) {
             if (id === currentAdminId) return alert("You cannot delete your own account while you are logged in.");
-            if (confirm(`Are you sure you want to revoke admin access for user "${name}"?`)) {
+            if (confirm(`ACCIDENTAL ERASE PROTECTION:\nAre you sure you want to revoke admin access for user "${name}"?`)) {
                 try {
-                    await supabaseClient.from('admins').delete().eq('id', id);
+                    const { error } = await supabaseClient.from('admins').delete().eq('id', id);
+                    if (error) throw error;
                     loadAdminUsers();
-                } catch(e) { alert("Failed to delete user: " + e.message); }
+                } catch(e) {
+                    alert("Failed to delete user: " + e.message);
+                }
             }
         }
 
-        function toggleDeptCustom() { document.getElementById('emp-dept-custom').style.display = document.getElementById('emp-dept-select').value === 'custom' ? 'block' : 'none'; }
-        
-        function toggleTypeCustom() {
-            const selectVal = document.getElementById('emp-type-select').value;
-            document.getElementById('emp-type-custom').style.display = selectVal === 'custom' ? 'block' : 'none';
-            const signifiFields = document.getElementById('signifi-only-fields');
-            if(signifiFields) signifiFields.style.display = selectVal === 'Signifi' ? 'block' : 'none';
+        function toggleDeptCustom() {
+            document.getElementById('emp-dept-custom').style.display = 
+                document.getElementById('emp-dept-select').value === 'custom' ? 'block' : 'none';
         }
 
-        // === EMPLOYEE MANAGEMENT ===
+        function toggleTypeCustom() {
+            const selectVal = document.getElementById('emp-type-select').value;
+            document.getElementById('emp-type-custom').style.display = 
+                selectVal === 'custom' ? 'block' : 'none';
+            
+            const signifiFields = document.getElementById('signifi-only-fields');
+            if(signifiFields) {
+                signifiFields.style.display = selectVal === 'Signifi' ? 'block' : 'none';
+            }
+        }
+
+        // EMPLOYEE MANAGEMENT DIRECTORY
         window.toggleLaidOffView = function() {
             viewingLaidOff = !viewingLaidOff;
             const btn = document.getElementById('view-laidoff-btn');
-            if (viewingLaidOff) { btn.innerText = "View Active Employees"; btn.style.backgroundColor = "#28a745"; } 
-            else { btn.innerText = "View Laid Off"; btn.style.backgroundColor = "#6c757d"; }
+            if (viewingLaidOff) {
+                btn.innerText = "View Active Employees";
+                btn.style.backgroundColor = "#28a745";
+            } else {
+                btn.innerText = "View Laid Off";
+                btn.style.backgroundColor = "#6c757d";
+            }
             loadEmployees();
         };
 
@@ -1316,14 +1335,27 @@
             const actionText = currentlyLaidOff ? "RESTORE" : "LAY OFF";
             if(confirm(`Are you sure you want to ${actionText} employee "${name}"?`)) {
                 try {
-                    await supabaseClient.from('employees').update({ is_laid_off: !currentlyLaidOff }).eq('employee_id', badgeId);
+                    const { error } = await supabaseClient.from('employees').update({
+                        isLaidOff: !currentlyLaidOff
+                    }).eq('id', badgeId);
+                    if (error) throw error;
                     loadEmployees();
-                } catch(e) { alert("Failed to update status: " + e.message); }
+                } catch(e) {
+                    console.error(e);
+                    alert("Failed to update status: " + e.message);
+                }
             }
         };
 
-        function setEmployeeAgencyFilter(filterType) { currentEmpAgencyFilter = filterType; loadEmployees(); }
-        function setEmployeeDeptFilter(dept) { currentEmpDeptFilter = dept; loadEmployees(); }
+        function setEmployeeAgencyFilter(filterType) {
+            currentEmpAgencyFilter = filterType;
+            loadEmployees();
+        }
+
+        function setEmployeeDeptFilter(dept) {
+            currentEmpDeptFilter = dept;
+            loadEmployees();
+        }
 
         async function loadEmployees() {
             const tbody = document.getElementById('employee-list-body');
@@ -1350,11 +1382,15 @@
                 let totalActiveCount = 0;
 
                 snapshot.forEach(emp => {
-                    const isLaidOff = emp.is_laid_off === true;
+                    const isLaidOff = emp.isLaidOff === true;
+                    
                     if (!isLaidOff) totalActiveCount++;
 
-                    if ((viewingLaidOff && isLaidOff) || (!viewingLaidOff && !isLaidOff)) {
-                        if (emp.type === 'Agency') agencies.add(emp.agency_name ? emp.agency_name.trim() : 'Unnamed Agency');
+                    if (viewingLaidOff && isLaidOff) {
+                        if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
+                        depts.add(emp.department ? emp.department.trim() : 'General');
+                    } else if (!viewingLaidOff && !isLaidOff) {
+                        if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
                         depts.add(emp.department ? emp.department.trim() : 'General');
                     }
                 });
@@ -1376,11 +1412,45 @@
                 });
                 deptTabs.innerHTML = deptHtml;
 
+                const renderEmployeeRow = (emp, sNo) => {
+                    const safeEmpJson = JSON.stringify(emp).replace(/"/g, '&quot;');
+                    let displayAgency = (emp.type === 'Agency') ? (emp.agencyName || 'Unnamed Agency') : '-';
+                    let displayPay = (emp.type === 'Signifi') ? (emp.payType || 'Salaried') : '-';
+                    
+                    let displayVac = (emp.type === 'Signifi') ? `${(emp.vacationTotal || 0) - (emp.vacationUsed || 0)} / ${emp.vacationTotal || 0}` : 'N/A';
+                    let displaySick = (emp.type === 'Signifi') ? `${(emp.sickTotal || 0) - (emp.sickUsed || 0)} / ${emp.sickTotal || 0}` : 'N/A';
+                    let displayLieu = (emp.type === 'Signifi') ? `${(emp.lieuTotal || 0) - (emp.lieuUsed || 0)} / ${emp.lieuTotal || 0}` : 'N/A';
+
+                    let layOffBtn = emp.isLaidOff 
+                        ? `<button class="small-btn" style="background-color: #20c997;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', true)">Restore</button>`
+                        : `<button class="small-btn" style="background-color: #fd7e14;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', false)">Lay Off</button>`;
+
+                    return `
+                        <tr>
+                            <td><strong>${sNo}</strong></td>
+                            <td><strong>${emp.id}</strong></td>
+                            <td>${emp.name}</td>
+                            <td>${emp.department} <br><small style="color:gray">${displayAgency}</small></td>
+                            <td>${displayPay}</td>
+                            <td>${displayVac}</td>
+                            <td>${displaySick}</td>
+                            <td>${displayLieu}</td>
+                            <td style="text-align:center;">
+                                <button class="small-btn btn-print" onclick="printBadge('${emp.id}', '${emp.name}', '${emp.department}')">Print</button>
+                                <button class="small-btn btn-edit" onclick="openEmployeeModal(${safeEmpJson})">Edit</button>
+                                ${layOffBtn}
+                                <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.id}', '${emp.name}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                };
+
                 let empList = [];
+
                 snapshot.forEach(emp => {
-                    const empAgency = emp.agency_name ? emp.agency_name.trim() : 'Unnamed Agency';
+                    const empAgency = emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency';
                     const empDept = emp.department ? emp.department.trim() : 'General';
-                    const isLaidOff = emp.is_laid_off === true;
+                    const isLaidOff = emp.isLaidOff === true;
 
                     if (viewingLaidOff && !isLaidOff) return;
                     if (!viewingLaidOff && isLaidOff) return;
@@ -1394,51 +1464,31 @@
                     if (currentEmpDeptFilter === 'All') showDept = true;
                     else if (empDept === currentEmpDeptFilter) showDept = true;
 
-                    if (showAgency && showDept) empList.push(emp);
+                    if (showAgency && showDept) {
+                        empList.push(emp);
+                    }
                 });
 
                 empList.sort((a, b) => {
-                    if (sortVal === 'name_asc') return (a.full_name || '').localeCompare(b.full_name || '');
-                    else if (sortVal === 'name_desc') return (b.full_name || '').localeCompare(a.full_name || '');
-                    else if (sortVal === 'newest') return (b.created_at || 0) - (a.created_at || 0);
-                    else if (sortVal === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
+                    if (sortVal === 'name_asc') {
+                        return (a.name || '').localeCompare(b.name || '');
+                    } else if (sortVal === 'name_desc') {
+                        return (b.name || '').localeCompare(a.name || '');
+                    } else if (sortVal === 'newest') {
+                        return (b.createdAt || 0) - (a.createdAt || 0);
+                    } else if (sortVal === 'oldest') {
+                        return (a.createdAt || 0) - (b.createdAt || 0);
+                    }
                     return 0;
                 });
 
                 empList.forEach((emp, idx) => {
-                    const safeEmpJson = JSON.stringify(emp).replace(/"/g, '&quot;');
-                    let displayAgency = (emp.type === 'Agency') ? (emp.agency_name || 'Unnamed Agency') : '-';
-                    let displayPay = (emp.type === 'Signifi') ? (emp.pay_type || 'Salaried') : '-';
-                    
-                    let displayVac = (emp.type === 'Signifi') ? `${(emp.vacation_total || 0) - (emp.vacation_used || 0)} / ${emp.vacation_total || 0}` : 'N/A';
-                    let displaySick = (emp.type === 'Signifi') ? `${(emp.sick_total || 0) - (emp.sick_used || 0)} / ${emp.sick_total || 0}` : 'N/A';
-                    let displayLieu = (emp.type === 'Signifi') ? `${(emp.lieu_total || 0) - (emp.lieu_used || 0)} / ${emp.lieu_total || 0}` : 'N/A';
-
-                    let layOffBtn = emp.is_laid_off 
-                        ? `<button class="small-btn" style="background-color: #20c997;" onclick="toggleEmployeeLayOff('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', true)">Restore</button>`
-                        : `<button class="small-btn" style="background-color: #fd7e14;" onclick="toggleEmployeeLayOff('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', false)">Lay Off</button>`;
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${idx + 1}</strong></td>
-                            <td><strong>${emp.employee_id}</strong></td>
-                            <td>${emp.full_name}</td>
-                            <td>${emp.department} <br><small style="color:gray">${displayAgency}</small></td>
-                            <td>${displayPay}</td>
-                            <td>${displayVac}</td>
-                            <td>${displaySick}</td>
-                            <td>${displayLieu}</td>
-                            <td style="text-align:center;">
-                                <button class="small-btn btn-print" onclick="printBadge('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}', '${emp.department.replace(/'/g, "\\'")}')">Print</button>
-                                <button class="small-btn btn-edit" onclick="openEmployeeModal(${safeEmpJson})">Edit</button>
-                                ${layOffBtn}
-                                <button class="small-btn btn-delete" onclick="deleteEmployee('${emp.employee_id}', '${emp.full_name.replace(/'/g, "\\'")}')">Delete</button>
-                            </td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += renderEmployeeRow(emp, idx + 1);
                 });
 
-                if (empList.length === 0) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No employees found for this category.</td></tr>`;
+                if (empList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No employees found for this category.</td></tr>`;
+                }
 
             } catch(e) {
                 console.error(e);
@@ -1474,18 +1524,18 @@
             if (empData) {
                 title.innerText = "Edit Employee Information";
                 saveBtn.innerText = "Update Employee";
-                document.getElementById('emp-original-id').value = empData.employee_id;
-                document.getElementById('emp-created-at').value = empData.created_at || '';
-                document.getElementById('emp-id').value = empData.employee_id;
-                document.getElementById('emp-name').value = empData.full_name;
-                document.getElementById('emp-pay-type').value = empData.pay_type || 'Salaried';
+                document.getElementById('emp-original-id').value = empData.id;
+                document.getElementById('emp-created-at').value = empData.createdAt || '';
+                document.getElementById('emp-id').value = empData.id;
+                document.getElementById('emp-name').value = empData.name;
+                document.getElementById('emp-pay-type').value = empData.payType || 'Salaried';
                 
-                if (empData.vacation_total !== undefined) document.getElementById('emp-vacation-total').value = empData.vacation_total;
-                if (empData.vacation_used !== undefined) document.getElementById('emp-vacation-used').value = empData.vacation_used;
-                if (empData.sick_total !== undefined) document.getElementById('emp-sick-total').value = empData.sick_total;
-                if (empData.sick_used !== undefined) document.getElementById('emp-sick-used').value = empData.sick_used;
-                if (empData.lieu_total !== undefined) document.getElementById('emp-lieu-total').value = empData.lieu_total;
-                if (empData.lieu_used !== undefined) document.getElementById('emp-lieu-used').value = empData.lieu_used;
+                if (empData.vacationTotal !== undefined) document.getElementById('emp-vacation-total').value = empData.vacationTotal;
+                if (empData.vacationUsed !== undefined) document.getElementById('emp-vacation-used').value = empData.vacationUsed;
+                if (empData.sickTotal !== undefined) document.getElementById('emp-sick-total').value = empData.sickTotal;
+                if (empData.sickUsed !== undefined) document.getElementById('emp-sick-used').value = empData.sickUsed;
+                if (empData.lieuTotal !== undefined) document.getElementById('emp-lieu-total').value = empData.lieuTotal;
+                if (empData.lieuUsed !== undefined) document.getElementById('emp-lieu-used').value = empData.lieuUsed;
 
                 const predefinedDepts = ['Production', 'Inventory', 'Quality'];
                 if (predefinedDepts.includes(empData.department)) {
@@ -1499,13 +1549,14 @@
                     document.getElementById('emp-type-select').value = 'Signifi';
                 } else {
                     const predefinedAgencies = ['T-DOT', 'Carrier Club'];
-                    if (predefinedAgencies.includes(empData.agency_name)) {
-                        document.getElementById('emp-type-select').value = empData.agency_name;
+                    if (predefinedAgencies.includes(empData.agencyName)) {
+                        document.getElementById('emp-type-select').value = empData.agencyName;
                     } else {
                         document.getElementById('emp-type-select').value = 'custom';
-                        document.getElementById('emp-type-custom').value = empData.agency_name;
+                        document.getElementById('emp-type-custom').value = empData.agencyName;
                     }
                 }
+                
                 toggleDeptCustom();
                 toggleTypeCustom();
             } else {
@@ -1523,7 +1574,7 @@
             let payType = document.getElementById('emp-pay-type').value;
             let createdAtVal = document.getElementById('emp-created-at').value;
             
-            if (!name) return alert("Please enter the employee's Full Name.");
+            if (!name) { alert("Please enter the employee's Full Name."); return; }
 
             let dept = document.getElementById('emp-dept-select').value;
             if (dept === 'custom') {
@@ -1532,7 +1583,9 @@
             }
 
             let typeSelection = document.getElementById('emp-type-select').value;
-            if (typeSelection === 'custom') typeSelection = document.getElementById('emp-type-custom').value.trim();
+            if (typeSelection === 'custom') {
+                typeSelection = document.getElementById('emp-type-custom').value.trim();
+            }
             
             let type = 'Agency';
             let agency = typeSelection;
@@ -1541,48 +1594,56 @@
                 type = 'Signifi';
                 agency = '';
             } else if (!typeSelection) {
-                return alert("Please specify the Agency name."); 
+                alert("Please specify the Agency name."); 
+                return;
             }
 
-            let vacTotal = parseInt(document.getElementById('emp-vacation-total').value, 10) || 0;
-            let vacUsed = parseInt(document.getElementById('emp-vacation-used').value, 10) || 0;
-            let sickTot = parseInt(document.getElementById('emp-sick-total').value, 10) || 0;
-            let sickUsd = parseInt(document.getElementById('emp-sick-used').value, 10) || 0;
-            let lieuTot = parseInt(document.getElementById('emp-lieu-total').value, 10) || 0;
-            let lieuUsd = parseInt(document.getElementById('emp-lieu-used').value, 10) || 0;
+            let vacTotal = parseInt(document.getElementById('emp-vacation-total').value) || 0;
+            let vacUsed = parseInt(document.getElementById('emp-vacation-used').value) || 0;
+            let sickTot = parseInt(document.getElementById('emp-sick-total').value) || 0;
+            let sickUsd = parseInt(document.getElementById('emp-sick-used').value) || 0;
+            let lieuTot = parseInt(document.getElementById('emp-lieu-total').value) || 0;
+            let lieuUsd = parseInt(document.getElementById('emp-lieu-used').value) || 0;
 
             if (type !== 'Signifi') {
-                vacTotal = 0; vacUsed = 0; sickTot = 0; sickUsd = 0; lieuTot = 0; lieuUsd = 0;
+                vacTotal = 0; vacUsed = 0;
+                sickTot = 0; sickUsd = 0;
+                lieuTot = 0; lieuUsd = 0;
                 payType = 'Hourly'; 
             }
 
             const badgeId = requestedId ? requestedId : Math.floor(100000 + Math.random() * 900000).toString();
             const isNew = !originalId;
-            let empCreatedAt = createdAtVal ? parseInt(createdAtVal, 10) : Date.now();
+            let empCreatedAt = createdAtVal ? parseInt(createdAtVal) : Date.now();
 
             try {
                 if (isNew || originalId !== badgeId) {
-                    const { data: existingDoc } = await supabaseClient.from('employees').select('full_name').eq('employee_id', badgeId).single();
-                    if (existingDoc) return alert(`OVERWRITE PREVENTED: Badge ID "${badgeId}" is already assigned to employee "${existingDoc.full_name}".`);
+                    const { data: existingDoc } = await supabaseClient.from('employees').select('name').eq('id', badgeId).maybeSingle();
+                    if (existingDoc) {
+                        alert(`OVERWRITE PREVENTED: Badge ID "${badgeId}" is already assigned to employee "${existingDoc.name}". Please use a unique Badge ID.`);
+                        return;
+                    }
                 }
 
-                if (!isNew && originalId !== badgeId) await supabaseClient.from('employees').delete().eq('employee_id', originalId);
+                if (!isNew && originalId !== badgeId) {
+                    await supabaseClient.from('employees').delete().eq('id', originalId);
+                }
 
                 const { error } = await supabaseClient.from('employees').upsert({
-                    employee_id: badgeId,
-                    full_name: name,
+                    id: badgeId,
+                    name: name,
                     department: dept,
                     type: type,
-                    pay_type: payType,
-                    agency_name: agency,
-                    vacation_total: vacTotal,
-                    vacation_used: vacUsed,
-                    sick_total: sickTot,
-                    sick_used: sickUsd,
-                    lieu_total: lieuTot,
-                    lieu_used: lieuUsd,
-                    created_at: empCreatedAt,
-                    is_laid_off: false
+                    payType: payType,
+                    agencyName: agency,
+                    vacationTotal: vacTotal,
+                    vacationUsed: vacUsed,
+                    sickTotal: sickTot,
+                    sickUsed: sickUsd,
+                    lieuTotal: lieuTot,
+                    lieuUsed: lieuUsd,
+                    createdAt: empCreatedAt,
+                    isLaidOff: false
                 });
 
                 if (error) throw error;
@@ -1590,37 +1651,46 @@
                 closeModal('employee-modal');
                 loadEmployees(); 
 
-                if (isNew || originalId !== badgeId) printBadge(badgeId, name, dept);
-                else alert("Employee information updated successfully!");
-
+                if (isNew || originalId !== badgeId) {
+                    printBadge(badgeId, name, dept);
+                } else {
+                    alert("Employee information updated successfully!");
+                }
             } catch(e) {
+                console.error("Database save failed:", e);
                 alert("Database save failed: " + e.message);
             }
         }
 
         async function deleteEmployee(badgeId, name) {
-            if(confirm(`Are you SURE you want to delete ${name} (Badge: ${badgeId})?\n\nThis action cannot be undone.`)) {
+            if(confirm(`ACCIDENTAL ERASE PROTECTION:\nAre you SURE you want to delete ${name} (Badge: ${badgeId})?\n\nThis will remove their profile from the database. This action cannot be undone.`)) {
                 if(confirm(`Final confirmation: Permanently delete employee "${name}"?`)) {
                     try {
-                        await supabaseClient.from('employees').delete().eq('employee_id', badgeId);
+                        const { error } = await supabaseClient.from('employees').delete().eq('id', badgeId);
+                        if (error) throw error;
                         loadEmployees(); 
-                    } catch(e) { alert("Failed to delete employee: " + e.message); }
+                    } catch(e) {
+                        console.error(e);
+                        alert("Failed to delete employee: " + e.message);
+                    }
                 }
             }
         }
 
         function printBadge(badgeId, name, dept) {
             document.getElementById('print-name').innerText = `${name} - ${dept}`;
-            JsBarcode("#barcode-svg", badgeId, { format: "CODE128", width: 2, height: 100, displayValue: false });
+            JsBarcode("#barcode-svg", badgeId, {
+                format: "CODE128", width: 2, height: 100, displayValue: false
+            });
             document.getElementById('print-modal').style.display = 'flex';
         }
 
-        // === HISTORY VIEWER ===
+        // HISTORY VIEWER
         function getWeekStart(dateObj) {
             if (!dateObj) return 'N/A';
             const d = new Date(dateObj);
             const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             d.setDate(diff);
             return "Week of " + d.toLocaleDateString();
         }
@@ -1630,19 +1700,20 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading all history...</td></tr>';
             
             try {
-                const { data: snapshot, error } = await supabaseClient.from('scan_logs').select('*').order('scanned_at', { ascending: false });
-                if(error) throw error;
+                const { data: snapshot, error } = await supabaseClient.from('shifts').select('*').order('timestamp', { ascending: false });
+                if (error) throw error;
                 
                 globalHistoryData = [];
-                if(snapshot) {
-                    snapshot.forEach(row => {
-                        row.jsDate = row.scanned_at ? new Date(row.scanned_at) : null;
-                        row.timeStr = row.jsDate ? row.jsDate.toLocaleString() : 'N/A';
-                        globalHistoryData.push(row);
-                    });
-                }
+                (snapshot || []).forEach(data => {
+                    data.jsDate = data.timestamp ? new Date(data.timestamp) : null;
+                    data.timeStr = data.jsDate ? data.jsDate.toLocaleString() : 'N/A';
+                    globalHistoryData.push(data);
+                });
+                
                 renderHistoryTable();
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="4">Database error.</td></tr>'; }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="4">Database not connected yet.</td></tr>';
+            }
         }
 
         function renderHistoryTable() {
@@ -1661,7 +1732,10 @@
                 const fAction = (d.action || '').toLowerCase();
                 const fType = (d.type || '').toLowerCase();
 
-                return fDate.includes(dateFilter) && fName.includes(nameFilter) && fAction.includes(actionFilter) && fType.includes(typeFilter);
+                return fDate.includes(dateFilter) && 
+                       fName.includes(nameFilter) && 
+                       fAction.includes(actionFilter) && 
+                       fType.includes(typeFilter);
             });
 
             if (filteredData.length === 0) {
@@ -1675,17 +1749,22 @@
                         <td>${data.timeStr}</td>
                         <td>${data.name}</td>
                         <td><b style="color:${data.action==='IN'?'green':'blue'}">${data.action}</b></td>
-                        <td>${data.type || 'N/A'}</td>
+                        <td>${data.type}</td>
                     </tr>`;
                 });
             } else {
                 const groups = {};
                 filteredData.forEach(data => {
                     let key = 'Unknown';
-                    if (groupBy === 'day') key = data.jsDate ? data.jsDate.toLocaleDateString() : 'N/A';
-                    else if (groupBy === 'week') key = getWeekStart(data.jsDate);
-                    else if (groupBy === 'month') key = data.jsDate ? data.jsDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A';
-                    else if (groupBy === 'name') key = data.name || 'Unknown';
+                    if (groupBy === 'day') {
+                        key = data.jsDate ? data.jsDate.toLocaleDateString() : 'N/A';
+                    } else if (groupBy === 'week') {
+                        key = getWeekStart(data.jsDate);
+                    } else if (groupBy === 'month') {
+                        key = data.jsDate ? data.jsDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A';
+                    } else if (groupBy === 'name') {
+                        key = data.name || 'Unknown';
+                    }
                     
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(data);
@@ -1700,26 +1779,36 @@
                             <td>${data.timeStr}</td>
                             <td>${data.name}</td>
                             <td><b style="color:${data.action==='IN'?'green':'blue'}">${data.action}</b></td>
-                            <td>${data.type || 'N/A'}</td>
+                            <td>${data.type}</td>
                         </tr>`;
                     });
                 }
             }
+
             tbody.innerHTML = html;
         }
 
-        function filterHistoryTable() { renderHistoryTable(); }
+        function filterHistoryTable() {
+            renderHistoryTable();
+        }
 
-        // === TIMESHEET REPORTS ===
-        function setReportFilter(filterType) { currentReportFilter = filterType; generateReport(); }
+        // CUSTOM RANGE TIMESHEET REPORT
+        function setReportFilter(filterType) {
+            currentReportFilter = filterType;
+            generateReport();
+        }
+
         function toggleDeptFilter(dept) {
-            if (dept === 'All') currentDeptFilters = ['All'];
-            else {
+            if (dept === 'All') {
+                currentDeptFilters = ['All'];
+            } else {
                 currentDeptFilters = currentDeptFilters.filter(d => d !== 'All');
                 if (currentDeptFilters.includes(dept)) {
                     currentDeptFilters = currentDeptFilters.filter(d => d !== dept);
                     if (currentDeptFilters.length === 0) currentDeptFilters = ['All'];
-                } else currentDeptFilters.push(dept);
+                } else {
+                    currentDeptFilters.push(dept);
+                }
             }
             generateReport();
         }
@@ -1727,11 +1816,14 @@
         function renderDeptFilters() {
             const container = document.getElementById('dynamic-dept-filter-tabs');
             if (!container) return;
+            
             let html = `<button class="filter-btn ${currentDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleDeptFilter('All')">All</button>`;
+            
             availableDepartments.forEach(dept => {
                 const safeDept = dept.replace(/'/g, "\\'");
                 html += `<button class="filter-btn ${currentDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleDeptFilter('${safeDept}')">${dept}</button>`;
             });
+            
             container.innerHTML = html;
         }
 
@@ -1740,16 +1832,23 @@
             if (!statDateStr) return alert("Please select a date for the Stat Holiday.");
             
             const totalInputs = document.querySelectorAll(`.total-input[data-date="${statDateStr}"]`);
-            if (totalInputs.length === 0) return alert("The selected date is not in the currently generated report.");
+            if (totalInputs.length === 0) {
+                return alert("The selected date is not in the currently generated report. Please ensure the date falls within the selected range and generate the report first.");
+            }
             
             if (!confirm(`Apply Stat Holiday rules to all employees for ${statDateStr}?\n\nSignifi = 8 Paid Hours\nAgencies = Off`)) return;
             
             totalInputs.forEach(input => {
                 const empType = input.dataset.emptype;
-                if (empType === 'Signifi') input.value = "Stat Holiday";
-                else if (empType === 'Agency') input.value = "Off";
+                if (empType === 'Signifi') {
+                    input.value = "Stat Holiday";
+                } else if (empType === 'Agency') {
+                    input.value = "Off";
+                }
+                
                 input.dispatchEvent(new Event('change'));
             });
+            
             alert("Stat Holiday applied to the report! Click 'Save Changes' to permanently save to the database.");
         };
 
@@ -1775,26 +1874,32 @@
 
                         if (!skipOverride) {
                             const docId = empId + "_" + dateStr;
-                            if (!overrideMap[docId]) overrideMap[docId] = { emp_id: empId, date: dateStr, id: docId };
-                            
-                            if(field === 'in') overrideMap[docId].in_time = val;
-                            if(field === 'out') overrideMap[docId].out_time = val;
-                            if(field === 'break') overrideMap[docId].break_time = val;
-                            if(field === 'total') overrideMap[docId].total_time = val;
+                            if (!overrideMap[docId]) {
+                                overrideMap[docId] = { id: docId, empId: empId, date: dateStr };
+                            }
+                            overrideMap[docId][field] = val;
                         }
 
                         if (field === 'total') {
                             if (!empDeltas[empId]) empDeltas[empId] = { vac: 0, sick: 0, lieu: 0 };
+                            
                             let oldVal = (input.dataset.original || "").toLowerCase();
                             let newVal = val.toLowerCase();
 
-                            let oldIsVac = oldVal.includes('vacation'), oldIsSick = oldVal.includes('sick'), oldIsLieu = oldVal.includes('paid lieu');
-                            let newIsVac = newVal.includes('vacation'), newIsSick = newVal.includes('sick'), newIsLieu = newVal.includes('paid lieu');
+                            let oldIsVac = oldVal.includes('vacation');
+                            let oldIsSick = oldVal.includes('sick');
+                            let oldIsLieu = oldVal.includes('paid lieu');
+
+                            let newIsVac = newVal.includes('vacation');
+                            let newIsSick = newVal.includes('sick');
+                            let newIsLieu = newVal.includes('paid lieu');
 
                             if (newIsVac && !oldIsVac) empDeltas[empId].vac++;
                             if (!newIsVac && oldIsVac) empDeltas[empId].vac--;
+
                             if (newIsSick && !oldIsSick) empDeltas[empId].sick++;
                             if (!newIsSick && oldIsSick) empDeltas[empId].sick--;
+
                             if (newIsLieu && !oldIsLieu) empDeltas[empId].lieu++;
                             if (!newIsLieu && oldIsLieu) empDeltas[empId].lieu--;
 
@@ -1803,33 +1908,44 @@
                     }
                 });
                 
-                const overrideArray = Object.values(overrideMap);
-                if(overrideArray.length > 0) {
-                    await supabaseClient.from('timesheet_overrides').upsert(overrideArray);
+                const overridesList = Object.values(overrideMap);
+                if (overridesList.length > 0) {
+                    const { error: ovError } = await supabaseClient.from('timesheet_overrides').upsert(overridesList);
+                    if (ovError) throw ovError;
                 }
                 
                 for (let empId of Object.keys(empDeltas)) {
                     let delta = empDeltas[empId];
                     if (delta.vac !== 0 || delta.sick !== 0 || delta.lieu !== 0) {
-                        const { data: empDoc } = await supabaseClient.from('employees').select('vacation_used, sick_used, lieu_used').eq('employee_id', empId).single();
-                        if (empDoc) {
-                            let newVac = Math.max(0, (empDoc.vacation_used || 0) + delta.vac);
-                            let newSick = Math.max(0, (empDoc.sick_used || 0) + delta.sick);
-                            let newLieu = Math.max(0, (empDoc.lieu_used || 0) + delta.lieu);
-                            await supabaseClient.from('employees').update({ vacation_used: newVac, sick_used: newSick, lieu_used: newLieu }).eq('employee_id', empId);
+                        const { data: empData } = await supabaseClient.from('employees').select('*').eq('id', empId).maybeSingle();
+                        if (empData) {
+                            let newVac = Math.max(0, (empData.vacationUsed || 0) + delta.vac);
+                            let newSick = Math.max(0, (empData.sickUsed || 0) + delta.sick);
+                            let newLieu = Math.max(0, (empData.lieuUsed || 0) + delta.lieu);
+                            await supabaseClient.from('employees').update({
+                                vacationUsed: newVac,
+                                sickUsed: newSick,
+                                lieuUsed: newLieu
+                            }).eq('id', empId);
                         }
                     }
                 }
 
                 const noteInputs = document.querySelectorAll('.note-input');
-                const notesToUpsert = [];
+                const notesList = [];
                 noteInputs.forEach(input => {
                     const empId = input.dataset.empid;
-                    if(empId) notesToUpsert.push({ emp_id: empId, note: input.value });
+                    if(empId) {
+                        notesList.push({ id: empId, note: input.value });
+                    }
                 });
-                if(notesToUpsert.length > 0) await supabaseClient.from('timesheet_notes').upsert(notesToUpsert);
                 
-                alert("Changes saved successfully!");
+                if (notesList.length > 0) {
+                    await supabaseClient.from('timesheet_notes').upsert(notesList);
+                }
+                
+                alert("Changes saved successfully! These edits will now persist.");
+                
                 generateReport(); 
                 loadEmployees(); 
             } catch(e) {
@@ -1844,16 +1960,21 @@
             const endStr = document.getElementById('report-end').value;
             const sortVal = document.getElementById('report-sort') ? document.getElementById('report-sort').value : 'name_asc';
             
-            if (!startStr || !endStr) return alert("Please select both a Start Date and End Date.");
+            if (!startStr || !endStr) {
+                alert("Please select both a Start Date and End Date.");
+                return;
+            }
             
             const [sYear, sMonth, sDay] = startStr.split('-');
             const startD = new Date(sYear, sMonth - 1, sDay);
-            const reportYear = sYear;
             
             const [eYear, eMonth, eDay] = endStr.split('-');
             const endD = new Date(eYear, eMonth - 1, eDay);
             
-            if (endD < startD) return alert("End date must be after start date.");
+            if (endD < startD) {
+                alert("End date must be after start date.");
+                return;
+            }
 
             const rangeDates = [];
             let currentD = new Date(startD);
@@ -1862,7 +1983,10 @@
                 currentD.setDate(currentD.getDate() + 1);
             }
 
-            if (rangeDates.length > 31) return alert("Please select a date range of 31 days or less to prevent slow loading.");
+            if (rangeDates.length > 31) {
+                alert("Please select a date range of 31 days or less to prevent slow loading.");
+                return;
+            }
 
             const queryEndD = new Date(endD);
             queryEndD.setHours(23, 59, 59, 999);
@@ -1872,30 +1996,36 @@
             container.innerHTML = "<p>Loading timesheets...</p>";
 
             try {
-                const { data: empsSnapshot } = await supabaseClient.from("employees").select("*");
+                const { data: empsSnapshot, error: empErr } = await supabaseClient.from("employees").select("*");
+                if (empErr) throw empErr;
+
                 const employees = {};
                 const reportAgencies = new Set();
                 const reportDepts = new Set();
                 
-                if(empsSnapshot) {
-                    empsSnapshot.forEach(emp => { 
-                        if (emp.is_laid_off) return;
-                        employees[emp.employee_id] = emp; 
-                        if (emp.type === 'Agency') reportAgencies.add(emp.agency_name ? emp.agency_name.trim() : 'Unnamed Agency');
-                        reportDepts.add(emp.department ? emp.department.trim() : 'General');
-                    });
-                }
+                (empsSnapshot || []).forEach(emp => { 
+                    if (emp.isLaidOff) return;
+
+                    employees[emp.id] = emp; 
+                    if (emp.type === 'Agency') {
+                        reportAgencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
+                    }
+                    reportDepts.add(emp.department ? emp.department.trim() : 'General');
+                });
                 
                 availableDepartments = Array.from(reportDepts).sort();
                 renderDeptFilters();
 
-                const { data: overridesSnap } = await supabaseClient.from("timesheet_overrides").select("*").gte("date", startStr).lte("date", endStr);
+                const { data: overridesSnap } = await supabaseClient.from("timesheet_overrides")
+                    .select("*")
+                    .gte("date", startStr)
+                    .lte("date", endStr);
                 const overridesData = {};
-                if(overridesSnap) overridesSnap.forEach(doc => overridesData[doc.id] = doc);
+                (overridesSnap || []).forEach(doc => overridesData[doc.id] = doc);
 
                 const { data: notesSnap } = await supabaseClient.from("timesheet_notes").select("*");
                 const notesData = {};
-                if(notesSnap) notesSnap.forEach(doc => notesData[doc.emp_id] = doc.note);
+                (notesSnap || []).forEach(doc => notesData[doc.id] = doc.note);
 
                 let tabsHtml = `<button class="filter-btn ${currentReportFilter === 'All' ? 'active' : ''}" onclick="setReportFilter('All')">All Reports</button>
                                 <button class="filter-btn ${currentReportFilter === 'Signifi' ? 'active' : ''}" onclick="setReportFilter('Signifi')">Signifi</button>`;
@@ -1905,29 +2035,35 @@
                 });
                 filterTabsContainer.innerHTML = tabsHtml;
 
-                const { data: shiftsSnap } = await supabaseClient.from("scan_logs").select("*").gte("scanned_at", startD.toISOString()).lte("scanned_at", queryEndD.toISOString()).order("scanned_at", { ascending: true });
+                const { data: shiftsSnap } = await supabaseClient.from("shifts")
+                    .select("*")
+                    .gte("timestamp", startD.toISOString())
+                    .lte("timestamp", queryEndD.toISOString())
+                    .order("timestamp", { ascending: true });
                 
                 const shiftData = {};
-                if(shiftsSnap) {
-                    shiftsSnap.forEach(row => {
-                        const d = new Date(row.scanned_at);
-                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                        
-                        if (!shiftData[row.employee_id]) shiftData[row.employee_id] = {};
-                        if (!shiftData[row.employee_id][dateStr]) shiftData[row.employee_id][dateStr] = {};
-                        
-                        if (row.action === "IN" && !shiftData[row.employee_id][dateStr].in) {
-                            shiftData[row.employee_id][dateStr].in = d;
-                        } else if (row.action === "OUT") {
-                            shiftData[row.employee_id][dateStr].out = d;
-                        }
-                    });
-                }
+                (shiftsSnap || []).forEach(s => {
+                    const d = new Date(s.timestamp); 
+                    
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const dateStr = `${year}-${month}-${day}`;
+                    
+                    if (!shiftData[s.employeeId]) shiftData[s.employeeId] = {};
+                    if (!shiftData[s.employeeId][dateStr]) shiftData[s.employeeId][dateStr] = {};
+                    
+                    if (s.action === "IN" && !shiftData[s.employeeId][dateStr].in) {
+                        shiftData[s.employeeId][dateStr].in = d;
+                    } else if (s.action === "OUT") {
+                        shiftData[s.employeeId][dateStr].out = d;
+                    }
+                });
 
                 const groups = {}; 
                 for (let empId in employees) {
                     let emp = employees[empId];
-                    let agencyDisplay = (emp.type === 'Signifi') ? 'Signifi' : (emp.agency_name ? emp.agency_name.trim() : 'Unnamed Agency');
+                    let agencyDisplay = (emp.type === 'Signifi') ? 'Signifi' : (emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
                     let deptName = emp.department ? emp.department.trim() : 'General';
                     
                     if (currentReportFilter !== 'All' && agencyDisplay !== currentReportFilter) continue;
@@ -1938,7 +2074,7 @@
                     groups[agencyDisplay][deptName].push(emp);
                 }
 
-                const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 let html = "";
                 let gIdx = 0;
 
@@ -1947,10 +2083,10 @@
                         gIdx++;
                         
                         groups[agency][dept].sort((a, b) => {
-                            if (sortVal === 'name_asc') return (a.full_name || '').localeCompare(b.full_name || '');
-                            else if (sortVal === 'name_desc') return (b.full_name || '').localeCompare(a.full_name || '');
-                            else if (sortVal === 'newest') return (b.created_at || 0) - (a.created_at || 0);
-                            else if (sortVal === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
+                            if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+                            if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+                            if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+                            if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
                             return 0;
                         });
                         
@@ -1958,7 +2094,8 @@
                         let tableTitle = `${isSignifi ? 'Signifi' : agency} ${dept} - Timesheet`;
                         let titleColspan = rangeDates.length + (isSignifi ? 7 : 6);
 
-                        html += `<table class="report-table" style="table-layout: fixed; width: 100%; border: 2px solid #000; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt;">`;
+                        html += `<table class="report-table" style="table-layout: fixed; width: 100%; border: 2px solid #000; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt; margin-bottom: 30px;">`;
+                        html += `<thead>`;
                         html += `<tr><td colspan="${titleColspan}" class="report-header-title" style="background-color: #bfbfbf; border: 2px solid #000; font-size: 18px; padding: 10px; font-weight: bold; text-align: center;">${tableTitle}</td></tr>`;
                         
                         html += `<tr style="background-color: #d9d9d9;">`;
@@ -1967,341 +2104,270 @@
                         
                         for (let i = 0; i < rangeDates.length; i++) { 
                             let d = rangeDates[i];
-                            let bg = (d.getDay() === 0 || d.getDay() === 6) ? 'background-color: #bfbfbf;' : ''; 
-                            html += `<td style="border: 1px solid #000; font-weight: bold; text-align: center; ${bg}">${dayNames[d.getDay()]}</td>`; 
+                            let dayName = dayNames[d.getDay()];
+                            let dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
+                            html += `<td style="border: 1px solid #000; font-weight: bold; text-align: center;">${dayName}<br>${dateLabel}</td>`;
                         }
-                        
+
                         if (isSignifi) {
-                            html += `<td rowspan="2" style="width:7%; border: 1px solid #000; font-weight: bold; background-color: #d9d9d9; text-align: center; vertical-align: middle;">Total Full Days / Hours</td>`;
-                            html += `<td rowspan="2" style="width:8%; border: 1px solid #000; font-weight: bold; background-color: #d9d9d9; text-align: center; vertical-align: middle;">Total Extra Hours</td>`;
-                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; background-color: #d9d9d9; text-align: center; vertical-align: middle;">Total Leaves<br><small>(Vac/Sick/Lieu)</small></td>`;
-                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Note for Extra hours</td></tr>`;
+                            html += `<td rowspan="2" style="width:8%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Full Days</td>`;
+                            html += `<td rowspan="2" style="width:8%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Extra Hrs</td>`;
+                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Leaves Taken</td>`;
+                            html += `<td rowspan="2" style="width:12%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Notes</td>`;
                         } else {
-                            html += `<td rowspan="2" style="width:9%; border: 1px solid #000; font-weight: bold; background-color: #d9d9d9; text-align: center; vertical-align: middle;">Total working hours</td>`;
-                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Working area</td>`;
-                            html += `<td rowspan="2" style="width:16%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Note for Extra hours</td></tr>`;
-                        }
-                        
-                        html += `<tr style="background-color: #d9d9d9;">`;
-                        for (let i = 0; i < rangeDates.length; i++) {
-                            let d = rangeDates[i];
-                            let bg = (d.getDay() === 0 || d.getDay() === 6) ? 'background-color: #bfbfbf;' : '';
-                            let dStr = d.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
-                            html += `<td style="border: 1px solid #000; text-align: center; ${bg}">${dStr}</td>`;
+                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Total Hours</td>`;
+                            html += `<td rowspan="2" style="width:15%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Notes</td>`;
                         }
                         html += `</tr>`;
+                        html += `<tr style="background-color: #e9ecef;"><td colspan="${rangeDates.length}" style="text-align:center; font-size: 0.85rem; padding: 2px;">IN / OUT / BREAK / TOTAL</td></tr>`;
+                        html += `</thead><tbody>`;
 
-                        let eIdx = 0;
+                        let empList = groups[agency][dept];
 
-                        groups[agency][dept].forEach(emp => {
-                            eIdx++;
-                            let datalistId = `leave_${emp.employee_id}`;
-                            let datalistHtml = `<datalist id="${datalistId}">`;
-                            
-                            if (isSignifi) {
-                                let vTotal = emp.vacation_total || 0, vUsed = emp.vacation_used || 0;
-                                for(let v = vUsed + 1; v <= vTotal; v++) datalistHtml += `<option value="Vacation-${reportYear}-${v}"></option>`;
-                                let sTotal = emp.sick_total || 0, sUsed = emp.sick_used || 0;
-                                for(let s = sUsed + 1; s <= sTotal; s++) datalistHtml += `<option value="Sick-${reportYear}-${s}"></option>`;
-                                let lTotal = emp.lieu_total || 0, lUsed = emp.lieu_used || 0;
-                                for(let l = lUsed + 1; l <= lTotal; l++) datalistHtml += `<option value="Paid Lieu-${reportYear}-${l}"></option>`;
-                                datalistHtml += `<option value="Stat Holiday"></option><option value="Off"></option>`;
-                            }
-                            datalistHtml += `</datalist>`;
-                            
-                            const inVals = [], outVals = [], breakVals = [], totalVals = [];
+                        empList.forEach((emp, eIdx) => {
+                            let noteVal = notesData[emp.id] || "";
 
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                let d = rangeDates[i];
-                                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                let dayData = (shiftData[emp.employee_id] && shiftData[emp.employee_id][dateStr]) ? shiftData[emp.employee_id][dateStr] : {};
-                                let override = overridesData[`${emp.employee_id}_${dateStr}`] || {};
-
-                                let rawIn = dayData.in ? dayData.in.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '';
-                                let rawOut = dayData.out ? dayData.out.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : (dayData.in ? 'Missed' : '');
-
-                                let inVal = (override.in_time !== undefined) ? override.in_time : rawIn;
-                                let outVal = (override.out_time !== undefined) ? override.out_time : rawOut;
-                                let breakVal = (override.break_time !== undefined) ? override.break_time : '';
-                                let totalVal = (override.total_time !== undefined) ? override.total_time : '';
-
-                                if (!totalVal && inVal && outVal && outVal.toLowerCase() !== 'missed') {
-                                    let parseT = (s) => {
-                                        if (!s || !s.includes(':')) return 0;
-                                        let parts = s.split(':');
-                                        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-                                    };
-                                    let diff = Math.max(0, parseT(outVal) - parseT(inVal));
-                                    if (isSignifi) {
-                                        if (emp.pay_type === 'Hourly') {
-                                            let h = Math.floor(diff / 60), m = diff % 60;
-                                            totalVal = h + ":" + m.toString().padStart(2, '0');
-                                        } else {
-                                            if (diff >= 480) {
-                                                totalVal = "Full Day";
-                                                let ext = diff - 480;
-                                                if (ext > 0 && !breakVal) {
-                                                    let eh = Math.floor(ext / 60), em = ext % 60;
-                                                    breakVal = eh + ":" + em.toString().padStart(2, '0');
-                                                }
-                                            } else {
-                                                let h = Math.floor(diff / 60), m = diff % 60;
-                                                totalVal = h + ":" + m.toString().padStart(2, '0');
-                                            }
-                                        }
-                                    } else {
-                                        if (diff > 240 && !breakVal) breakVal = "0:45";
-                                        let bM = parseT(breakVal);
-                                        let net = Math.max(0, diff - bM);
-                                        let h = Math.floor(net / 60), m = net % 60;
-                                        totalVal = h + ":" + m.toString().padStart(2, '0');
-                                    }
-                                }
-
-                                inVals.push({ val: inVal, dateStr });
-                                outVals.push({ val: outVal, dateStr });
-                                breakVals.push({ val: breakVal, dateStr });
-                                totalVals.push({ val: totalVal, dateStr });
-                            }
-
-                            html += datalistHtml;
+                            html += `<tr>`;
+                            html += `<td rowspan="4" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${eIdx + 1}</td>`;
+                            html += `<td rowspan="4" colspan="2" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${emp.name}<br><small style="font-weight:normal; color:#555;">(${emp.payType || 'Salaried'})</small></td>`;
 
                             // Row 1: IN
-                            html += `<tr>`;
-                            html += `<td rowspan="4" style="border: 1px solid #000; text-align: center; vertical-align: middle;"><strong>${eIdx}</strong></td>`;
-                            html += `<td rowspan="4" style="border: 1px solid #000; text-align: left; padding: 5px; vertical-align: middle;"><strong>${emp.full_name}</strong><br><small style="color:gray;">${emp.employee_id}</small></td>`;
-                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">In</td>`;
                             for (let i = 0; i < rangeDates.length; i++) {
-                                html += `<td style="border: 1px solid #000;"><input type="text" id="in_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${inVals[i].dateStr}" data-field="in" value="${inVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'in')"></td>`;
+                                let d = rangeDates[i];
+                                let year = d.getFullYear();
+                                let month = String(d.getMonth() + 1).padStart(2, '0');
+                                let day = String(d.getDate()).padStart(2, '0');
+                                let dateStr = `${year}-${month}-${day}`;
+
+                                let sysIn = shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].in 
+                                    ? shiftData[emp.id][dateStr].in.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) 
+                                    : "";
+                                
+                                let ov = overridesData[`${emp.id}_${dateStr}`];
+                                let valIn = (ov && ov.in !== undefined) ? ov.in : sysIn;
+
+                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="in_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="in" value="${valIn}" placeholder="IN" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
                             }
+
                             if (isSignifi) {
-                                html += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.employee_id}" value="${notesData[emp.employee_id] || ''}"></td>`;
+                                html += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 0.9rem;">-</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 4px; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}" placeholder="Add note..."></td>`;
                             } else {
-                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;">${emp.department}</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.employee_id}" value="${notesData[emp.employee_id] || ''}"></td>`;
+                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">0:00</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 4px; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}" placeholder="Add note..."></td>`;
                             }
                             html += `</tr>`;
 
                             // Row 2: OUT
                             html += `<tr>`;
-                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">Out</td>`;
                             for (let i = 0; i < rangeDates.length; i++) {
-                                html += `<td style="border: 1px solid #000;"><input type="text" id="out_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${outVals[i].dateStr}" data-field="out" value="${outVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'out')"></td>`;
+                                let d = rangeDates[i];
+                                let year = d.getFullYear();
+                                let month = String(d.getMonth() + 1).padStart(2, '0');
+                                let day = String(d.getDate()).padStart(2, '0');
+                                let dateStr = `${year}-${month}-${day}`;
+
+                                let sysOut = shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].out 
+                                    ? shiftData[emp.id][dateStr].out.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) 
+                                    : (shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].in ? "Missed" : "");
+                                
+                                let ov = overridesData[`${emp.id}_${dateStr}`];
+                                let valOut = (ov && ov.out !== undefined) ? ov.out : sysOut;
+
+                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="out_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="out" value="${valOut}" placeholder="OUT" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
                             }
                             html += `</tr>`;
 
-                            // Row 3: BREAK / EXTRA
+                            // Row 3: BREAK
                             html += `<tr>`;
-                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #f0f0f0; text-align: center;">${isSignifi ? 'Extra' : 'Break'}</td>`;
                             for (let i = 0; i < rangeDates.length; i++) {
-                                html += `<td style="border: 1px solid #000;"><input type="text" id="break_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.employee_id}" data-date="${breakVals[i].dateStr}" data-field="break" value="${breakVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'break')"></td>`;
+                                let d = rangeDates[i];
+                                let year = d.getFullYear();
+                                let month = String(d.getMonth() + 1).padStart(2, '0');
+                                let day = String(d.getDate()).padStart(2, '0');
+                                let dateStr = `${year}-${month}-${day}`;
+
+                                let ov = overridesData[`${emp.id}_${dateStr}`];
+                                let valBreak = (ov && ov.break !== undefined) ? ov.break : "";
+
+                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="break_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="break" value="${valBreak}" placeholder="Break" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
                             }
                             html += `</tr>`;
 
                             // Row 4: TOTAL
-                            html += `<tr>`;
-                            html += `<td style="border: 1px solid #000; font-weight: bold; background: #e9e9e9; text-align: center;">Total</td>`;
+                            html += `<tr style="background-color: #f8f9fa;">`;
                             for (let i = 0; i < rangeDates.length; i++) {
-                                html += `<td style="border: 1px solid #000;"><input type="text" id="total_${gIdx}_${eIdx}_${i}" class="time-input total-input" list="${datalistId}" data-empid="${emp.employee_id}" data-date="${totalVals[i].dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${totalVals[i].val}" value="${totalVals[i].val}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.pay_type}', 'total')"></td>`;
+                                let d = rangeDates[i];
+                                let year = d.getFullYear();
+                                let month = String(d.getMonth() + 1).padStart(2, '0');
+                                let day = String(d.getDate()).padStart(2, '0');
+                                let dateStr = `${year}-${month}-${day}`;
+
+                                let ov = overridesData[`${emp.id}_${dateStr}`];
+                                let valTotal = (ov && ov.total !== undefined) ? ov.total : "";
+
+                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="total_${gIdx}_${eIdx}_${i}" class="time-input total-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${valTotal}" value="${valTotal}" placeholder="Total" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'total')"></td>`;
                             }
                             html += `</tr>`;
                         });
 
-                        // Table Group Footer
+                        // Department Total Row
                         html += `<tr style="background-color: #d9d9d9; font-weight: bold;">`;
-                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 6px;">Group Total:</td>`;
-                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000;"></td>`;
+                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 8px;">DEPARTMENT TOTAL:</td>`;
+                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000; text-align: center;">-</td>`;
                         if (isSignifi) {
-                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">0 Days</td>`;
-                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
-                            html += `<td colspan="2" style="border: 1px solid #000;"></td>`;
+                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">-</td>`;
+                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">-</td>`;
+                            html += `<td style="border: 1px solid #000;"></td>`;
+                            html += `<td style="border: 1px solid #000;"></td>`;
                         } else {
                             html += `<td id="grouptotal_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
-                            html += `<td colspan="2" style="border: 1px solid #000;"></td>`;
+                            html += `<td style="border: 1px solid #000;"></td>`;
                         }
-                        html += `</tr></table><br>`;
+                        html += `</tr>`;
+
+                        html += `</tbody></table>`;
                     }
                 }
 
-                container.innerHTML = html || "<p>No employees found for the selected criteria.</p>";
-
-                // Trigger live recalculations across all loaded employee rows
-                let curG = 0;
-                for (let agency in groups) {
-                    for (let dept in groups[agency]) {
-                        curG++;
-                        let eIdx = 0;
-                        groups[agency][dept].forEach(emp => {
-                            eIdx++;
-                            if (rangeDates.length > 0) {
-                                window.recalcTime(curG, eIdx, 0, rangeDates.length, emp.type, emp.pay_type, '');
-                            }
-                        });
+                if (html === "") {
+                    container.innerHTML = "<p>No matching employee records found for the selected filters.</p>";
+                } else {
+                    container.innerHTML = html;
+                    gIdx = 0;
+                    for (let agency in groups) {
+                        for (let dept in groups[agency]) {
+                            gIdx++;
+                            let empList = groups[agency][dept];
+                            empList.forEach((emp, eIdx) => {
+                                for (let i = 0; i < rangeDates.length; i++) {
+                                    recalcTime(gIdx, eIdx, i, rangeDates.length, emp.type, emp.payType);
+                                }
+                            });
+                        }
                     }
                 }
 
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = `<p style="color:red;">Error generating report: ${err.message}</p>`;
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = "<p style='color:red;'>Error generating report: " + e.message + "</p>";
             }
-        }
-
-        // === EXPORT REPORT TO EXCEL ===
-        function exportReportToExcel() {
-            const container = document.getElementById('report-container');
-            const tables = container.querySelectorAll('table');
-            if (tables.length === 0) return alert("No report data to export.");
-
-            const wb = XLSX.utils.book_new();
-            tables.forEach((table, index) => {
-                const ws = XLSX.utils.table_to_sheet(table);
-                const sheetName = `Report_${index + 1}`.substring(0, 31);
-                XLSX.utils.book_append_sheet(wb, ws, sheetName);
-            });
-            const startStr = document.getElementById('report-start').value || 'start';
-            const endStr = document.getElementById('report-end').value || 'end';
-            XLSX.writeFile(wb, `Timesheet_Report_${startStr}_to_${endStr}.xlsx`);
-        }
-
-        // === SIGNIFI REPORT TAB LOGIC ===
-        function toggleSignifiDeptFilter(dept) {
-            if (dept === 'All') currentSignifiDeptFilters = ['All'];
-            else {
-                currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== 'All');
-                if (currentSignifiDeptFilters.includes(dept)) {
-                    currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== dept);
-                    if (currentSignifiDeptFilters.length === 0) currentSignifiDeptFilters = ['All'];
-                } else currentSignifiDeptFilters.push(dept);
-            }
-            generateSignifiSummary();
         }
 
         async function generateSignifiSummary() {
             const startStr = document.getElementById('summary-start').value;
             const endStr = document.getElementById('summary-end').value;
             const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
+
+            if (!startStr || !endStr) {
+                alert("Please select both Start and End date.");
+                return;
+            }
+
             const container = document.getElementById('summary-container');
-            const deptTabsContainer = document.getElementById('dynamic-signifi-dept-tabs');
-
-            if (!startStr || !endStr) return alert("Please select both a Start Date and End Date.");
-
-            container.innerHTML = "<p>Loading Signifi Summary Report...</p>";
+            container.innerHTML = "<p>Generating Signifi Summary Report...</p>";
 
             try {
-                const { data: empsSnap } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi').eq('is_laid_off', false);
-                if (!empsSnap || empsSnap.length === 0) {
-                    container.innerHTML = "<p>No Signifi employees found.</p>";
-                    return;
-                }
+                const { data: emps, error } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi');
+                if (error) throw error;
 
-                const signifiDepts = new Set();
-                empsSnap.forEach(e => signifiDepts.add(e.department ? e.department.trim() : 'General'));
-
-                let deptTabsHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
-                Array.from(signifiDepts).sort().forEach(d => {
-                    const safeD = d.replace(/'/g, "\\'");
-                    deptTabsHtml += `<button class="filter-btn ${currentSignifiDeptFilters.includes(d) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeD}')">${d}</button>`;
-                });
-                deptTabsContainer.innerHTML = deptTabsHtml;
-
-                let filteredEmps = empsSnap.filter(e => {
-                    let d = e.department ? e.department.trim() : 'General';
-                    return currentSignifiDeptFilters.includes('All') || currentSignifiDeptFilters.includes(d);
-                });
+                const filteredEmps = (emps || []).filter(e => !e.isLaidOff);
 
                 filteredEmps.sort((a, b) => {
-                    if (sortVal === 'name_asc') return (a.full_name || '').localeCompare(b.full_name || '');
-                    if (sortVal === 'name_desc') return (b.full_name || '').localeCompare(a.full_name || '');
-                    if (sortVal === 'newest') return (b.created_at || 0) - (a.created_at || 0);
-                    if (sortVal === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
+                    if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+                    if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+                    if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+                    if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
                     return 0;
                 });
 
-                const { data: overridesSnap } = await supabaseClient.from('timesheet_overrides').select('*').gte('date', startStr).lte('date', endStr);
-                const overridesMap = {};
-                if(overridesSnap) overridesSnap.forEach(o => overridesMap[o.id] = o);
-
-                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif;">
+                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif; font-size:11pt;">
                     <thead>
-                        <tr style="background-color:#bfbfbf;">
-                            <th colspan="9" class="report-header-title">Signifi Summary Report (${startStr} to ${endStr})</th>
-                        </tr>
-                        <tr style="background-color:#d9d9d9; font-weight:bold;">
+                        <tr><th colspan="8" class="report-header-title" style="background:#bfbfbf; border:2px solid #000; padding:10px; font-size:18px;">Signifi Employee Summary Report (${startStr} to ${endStr})</th></tr>
+                        <tr style="background:#d9d9d9; font-weight:bold;">
                             <th>S.NO.</th>
-                            <th>Employee ID</th>
                             <th>Name</th>
                             <th>Department</th>
                             <th>Pay Type</th>
-                            <th>Worked Days / Hours</th>
-                            <th>Extra Hours</th>
-                            <th>Leaves Used (Range)</th>
-                            <th>Vacation Remaining</th>
+                            <th>Vacation (Rem/Tot)</th>
+                            <th>Sick (Rem/Tot)</th>
+                            <th>Paid Lieu (Rem/Tot)</th>
+                            <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
-                filteredEmps.forEach((emp, idx) => {
-                    let workedCount = 0;
-                    let extraMins = 0;
-                    let leavesCount = 0;
+                if (filteredEmps.length === 0) {
+                    html += `<tr><td colspan="8" style="text-align:center;">No Signifi employees found.</td></tr>`;
+                } else {
+                    filteredEmps.forEach((emp, idx) => {
+                        let vac = `${(emp.vacationTotal || 0) - (emp.vacationUsed || 0)} / ${emp.vacationTotal || 0}`;
+                        let sick = `${(emp.sickTotal || 0) - (emp.sickUsed || 0)} / ${emp.sickTotal || 0}`;
+                        let lieu = `${(emp.lieuTotal || 0) - (emp.lieuUsed || 0)} / ${emp.lieuTotal || 0}`;
 
-                    for (let id in overridesMap) {
-                        let o = overridesMap[id];
-                        if (o.emp_id === emp.employee_id) {
-                            let tVal = (o.total_time || "").toLowerCase();
-                            if (tVal === 'full day' || tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
-                                workedCount++;
-                            }
-                            if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu')) {
-                                leavesCount++;
-                            }
-                            if (o.break_time && o.break_time.includes(':')) {
-                                let parts = o.break_time.split(':');
-                                extraMins += parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-                            }
-                        }
-                    }
-
-                    let extraFormatted = `${Math.floor(extraMins/60)}:${(extraMins%60).toString().padStart(2, '0')}`;
-                    let vacRem = `${(emp.vacation_total || 0) - (emp.vacation_used || 0)} / ${emp.vacation_total || 0}`;
-
-                    html += `<tr>
-                        <td><strong>${idx + 1}</strong></td>
-                        <td>${emp.employee_id}</td>
-                        <td style="text-align:left; padding-left:10px;"><strong>${emp.full_name}</strong></td>
-                        <td>${emp.department}</td>
-                        <td>${emp.pay_type || 'Salaried'}</td>
-                        <td>${emp.pay_type === 'Hourly' ? workedCount * 8 + ' Hours' : workedCount + ' Days'}</td>
-                        <td>${extraFormatted}</td>
-                        <td>${leavesCount} Days</td>
-                        <td>${vacRem}</td>
-                    </tr>`;
-                });
+                        html += `<tr>
+                            <td>${idx + 1}</td>
+                            <td style="font-weight:bold; text-align:left; padding-left:10px;">${emp.name}</td>
+                            <td>${emp.department || 'General'}</td>
+                            <td>${emp.payType || 'Salaried'}</td>
+                            <td>${vac}</td>
+                            <td>${sick}</td>
+                            <td>${lieu}</td>
+                            <td>Active</td>
+                        </tr>`;
+                    });
+                }
 
                 html += `</tbody></table>`;
                 container.innerHTML = html;
 
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = `<p style="color:red;">Error loading Signifi summary: ${err.message}</p>`;
+            } catch (e) {
+                container.innerHTML = `<p style="color:red;">Error loading summary: ${e.message}</p>`;
             }
         }
 
-        function exportSummaryToExcel() {
-            const container = document.getElementById('summary-container');
-            const table = container.querySelector('table');
-            if (!table) return alert("No summary report data to export.");
+        function exportReportToExcel() {
+            const reportContainer = document.getElementById('report-container');
+            if (!reportContainer || !reportContainer.querySelector('table')) {
+                alert("No report table available to export. Please generate a report first.");
+                return;
+            }
+            
+            let html = reportContainer.innerHTML;
+            html = html.replace(/<input[^>]*value="([^"]*)"[^>]*>/gi, "$1");
+            html = html.replace(/<input[^>]*>/gi, "");
 
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.table_to_sheet(table);
-            XLSX.utils.book_append_sheet(wb, ws, "Signifi Summary");
-            const startStr = document.getElementById('summary-start').value || 'start';
-            const endStr = document.getElementById('summary-end').value || 'end';
-            XLSX.writeFile(wb, `Signifi_Summary_${startStr}_to_${endStr}.xlsx`);
+            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Timesheet_Report_${new Date().toISOString().slice(0,10)}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function exportSummaryToExcel() {
+            const summaryContainer = document.getElementById('summary-container');
+            if (!summaryContainer || !summaryContainer.querySelector('table')) {
+                alert("No summary table available to export. Please generate a summary first.");
+                return;
+            }
+
+            let html = summaryContainer.innerHTML;
+            html = html.replace(/<input[^>]*value="([^"]*)"[^>]*>/gi, "$1");
+            html = html.replace(/<input[^>]*>/gi, "");
+
+            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Signifi_Summary_Report_${new Date().toISOString().slice(0,10)}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     </script>
 </body>
