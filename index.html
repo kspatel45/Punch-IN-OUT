@@ -139,7 +139,7 @@
     <div class="top-header-bar">
         <img src="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true" alt="Up Vision Logo" class="top-left-logo">
         <div class="top-center-logo-wrapper">
-            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Logo missing. Place image_1fb393.png in the same folder as index.html.'; this.style.padding='5px';">
+            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Signifi Solutions Inc.'; this.style.padding='5px';">
         </div>
     </div>
     
@@ -338,11 +338,11 @@
     <!-- Admin Dashboard -->
     <div id="admin-view">
         <div class="admin-header">
-            <button class="tab-btn active" onclick="switchTab('employees')">Manage Employees</button>
-            <button class="tab-btn" onclick="switchTab('history')">Shift History</button>
-            <button class="tab-btn" onclick="switchTab('reports')">Timesheet Report</button>
-            <button class="tab-btn" onclick="switchTab('signifi-report')">Signifi Report</button>
-            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+            <button class="tab-btn active" onclick="switchTab('employees', event)">Manage Employees</button>
+            <button class="tab-btn" onclick="switchTab('history', event)">Shift History</button>
+            <button class="tab-btn" onclick="switchTab('reports', event)">Timesheet Report</button>
+            <button class="tab-btn" onclick="switchTab('signifi-report', event)">Signifi Report</button>
+            <button class="tab-btn" onclick="switchTab('settings', event)">Settings</button>
             <button class="exit" onclick="exitAdmin()">Exit to Kiosk</button>
         </div>
 
@@ -585,13 +585,13 @@
             }
         });
 
-        function getColLtr(n) {
-            let s = "";
-            while(n >= 0) {
-                s = String.fromCharCode(n % 26 + 65) + s;
-                n = Math.floor(n / 26) - 1;
-            }
-            return s;
+        function formatTimeStr(dateObj) {
+            if (!dateObj) return "";
+            const d = new Date(dateObj);
+            if (isNaN(d.getTime())) return "";
+            let h = d.getHours();
+            let m = d.getMinutes();
+            return `${h}:${m.toString().padStart(2, '0')}`;
         }
 
         // Global Filter State Variables
@@ -1172,12 +1172,19 @@
             manualInput.focus();
         }
 
-        function switchTab(tabId) {
+        function switchTab(tabId, evt) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.admin-header .tab-btn').forEach(el => el.classList.remove('active'));
             
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.add('active');
+
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            } else {
+                const btn = document.querySelector(`.admin-header button[onclick*="'${tabId}'"]`);
+                if (btn) btn.classList.add('active');
+            }
             
             if (tabId === 'employees') loadEmployees();
             if (tabId === 'history') loadHistory();
@@ -2127,11 +2134,11 @@
                         empList.forEach((emp, eIdx) => {
                             let noteVal = notesData[emp.id] || "";
 
+                            // Row 1: IN
                             html += `<tr>`;
                             html += `<td rowspan="4" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${eIdx + 1}</td>`;
                             html += `<td rowspan="4" colspan="2" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${emp.name}<br><small style="font-weight:normal; color:#555;">(${emp.payType || 'Salaried'})</small></td>`;
 
-                            // Row 1: IN
                             for (let i = 0; i < rangeDates.length; i++) {
                                 let d = rangeDates[i];
                                 let year = d.getFullYear();
@@ -2139,24 +2146,23 @@
                                 let day = String(d.getDate()).padStart(2, '0');
                                 let dateStr = `${year}-${month}-${day}`;
 
-                                let sysIn = shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].in 
-                                    ? shiftData[emp.id][dateStr].in.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) 
-                                    : "";
-                                
                                 let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let valIn = (ov && ov.in !== undefined) ? ov.in : sysIn;
+                                let rawIn = shiftData[emp.id]?.[dateStr]?.in;
+                                let inVal = ov?.in !== undefined ? ov.in : (rawIn ? formatTimeStr(rawIn) : "");
 
-                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="in_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="in" value="${valIn}" placeholder="IN" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
+                                html += `<td style="border: 1px solid #000; padding: 2px;">
+                                    <input type="text" class="time-input" id="in_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="in" value="${inVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'in')">
+                                </td>`;
                             }
 
                             if (isSignifi) {
                                 html += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
                                 html += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 0.9rem;">-</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 4px; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}" placeholder="Add note..."></td>`;
+                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 0.85rem;">-</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 2px;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}"></td>`;
                             } else {
-                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">0:00</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 4px; vertical-align: middle;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}" placeholder="Add note..."></td>`;
+                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
+                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 2px;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}"></td>`;
                             }
                             html += `</tr>`;
 
@@ -2164,19 +2170,16 @@
                             html += `<tr>`;
                             for (let i = 0; i < rangeDates.length; i++) {
                                 let d = rangeDates[i];
-                                let year = d.getFullYear();
-                                let month = String(d.getMonth() + 1).padStart(2, '0');
-                                let day = String(d.getDate()).padStart(2, '0');
-                                let dateStr = `${year}-${month}-${day}`;
+                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-                                let sysOut = shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].out 
-                                    ? shiftData[emp.id][dateStr].out.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) 
-                                    : (shiftData[emp.id] && shiftData[emp.id][dateStr] && shiftData[emp.id][dateStr].in ? "Missed" : "");
-                                
                                 let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let valOut = (ov && ov.out !== undefined) ? ov.out : sysOut;
+                                let rawIn = shiftData[emp.id]?.[dateStr]?.in;
+                                let rawOut = shiftData[emp.id]?.[dateStr]?.out;
+                                let outVal = ov?.out !== undefined ? ov.out : (rawOut ? formatTimeStr(rawOut) : (rawIn ? "Missed" : ""));
 
-                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="out_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="out" value="${valOut}" placeholder="OUT" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
+                                html += `<td style="border: 1px solid #000; padding: 2px;">
+                                    <input type="text" class="time-input" id="out_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="out" value="${outVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'out')">
+                                </td>`;
                             }
                             html += `</tr>`;
 
@@ -2184,48 +2187,45 @@
                             html += `<tr>`;
                             for (let i = 0; i < rangeDates.length; i++) {
                                 let d = rangeDates[i];
-                                let year = d.getFullYear();
-                                let month = String(d.getMonth() + 1).padStart(2, '0');
-                                let day = String(d.getDate()).padStart(2, '0');
-                                let dateStr = `${year}-${month}-${day}`;
+                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
                                 let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let valBreak = (ov && ov.break !== undefined) ? ov.break : "";
+                                let breakVal = ov?.break !== undefined ? ov.break : "";
 
-                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="break_${gIdx}_${eIdx}_${i}" class="time-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="break" value="${valBreak}" placeholder="Break" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}')"></td>`;
+                                html += `<td style="border: 1px solid #000; padding: 2px;">
+                                    <input type="text" class="time-input" id="break_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="break" value="${breakVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'break')">
+                                </td>`;
                             }
                             html += `</tr>`;
 
                             // Row 4: TOTAL
-                            html += `<tr style="background-color: #f8f9fa;">`;
+                            html += `<tr>`;
                             for (let i = 0; i < rangeDates.length; i++) {
                                 let d = rangeDates[i];
-                                let year = d.getFullYear();
-                                let month = String(d.getMonth() + 1).padStart(2, '0');
-                                let day = String(d.getDate()).padStart(2, '0');
-                                let dateStr = `${year}-${month}-${day}`;
+                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
                                 let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let valTotal = (ov && ov.total !== undefined) ? ov.total : "";
+                                let totalVal = ov?.total !== undefined ? ov.total : "";
 
-                                html += `<td style="border: 1px solid #ccc; padding: 2px;"><input type="text" id="total_${gIdx}_${eIdx}_${i}" class="time-input total-input" data-empid="${emp.id}" data-date="${dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${valTotal}" value="${valTotal}" placeholder="Total" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'total')"></td>`;
+                                html += `<td style="border: 1px solid #000; padding: 2px;">
+                                    <input type="text" class="time-input total-input" id="total_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${totalVal}" value="${totalVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'total')">
+                                </td>`;
                             }
                             html += `</tr>`;
                         });
 
-                        // Department Total Row
+                        // Summary Row
                         html += `<tr style="background-color: #d9d9d9; font-weight: bold;">`;
-                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 8px;">DEPARTMENT TOTAL:</td>`;
-                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000; text-align: center;">-</td>`;
+                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 6px;">Total:</td>`;
+                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000;"></td>`;
                         if (isSignifi) {
-                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">-</td>`;
-                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">-</td>`;
-                            html += `<td style="border: 1px solid #000;"></td>`;
+                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">0 Days</td>`;
+                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
                             html += `<td style="border: 1px solid #000;"></td>`;
                         } else {
                             html += `<td id="grouptotal_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
-                            html += `<td style="border: 1px solid #000;"></td>`;
                         }
+                        html += `<td style="border: 1px solid #000;"></td>`;
                         html += `</tr>`;
 
                         html += `</tbody></table>`;
@@ -2233,27 +2233,73 @@
                 }
 
                 if (html === "") {
-                    container.innerHTML = "<p>No matching employee records found for the selected filters.</p>";
-                } else {
-                    container.innerHTML = html;
-                    gIdx = 0;
-                    for (let agency in groups) {
-                        for (let dept in groups[agency]) {
-                            gIdx++;
-                            let empList = groups[agency][dept];
-                            empList.forEach((emp, eIdx) => {
-                                for (let i = 0; i < rangeDates.length; i++) {
-                                    recalcTime(gIdx, eIdx, i, rangeDates.length, emp.type, emp.payType);
-                                }
-                            });
-                        }
+                    container.innerHTML = "<p>No matching employee timesheet records found for the selected filters.</p>";
+                    return;
+                }
+
+                container.innerHTML = html;
+
+                // Initial Recalculation Pass
+                gIdx = 0;
+                for (let agency in groups) {
+                    for (let dept in groups[agency]) {
+                        gIdx++;
+                        let empList = groups[agency][dept];
+                        empList.forEach((emp, eIdx) => {
+                            for (let i = 0; i < rangeDates.length; i++) {
+                                recalcTime(gIdx, eIdx, i, rangeDates.length, emp.type, emp.payType);
+                            }
+                        });
                     }
                 }
 
             } catch(e) {
-                console.error(e);
-                container.innerHTML = "<p style='color:red;'>Error generating report: " + e.message + "</p>";
+                console.error("Report generation failed:", e);
+                container.innerHTML = `<p style="color:red;">Error generating report: ${e.message}</p>`;
             }
+        }
+
+        function exportReportToExcel() {
+            const container = document.getElementById('report-container');
+            if (!container || !container.querySelector('table')) {
+                return alert("No report data available to export. Please generate a report first.");
+            }
+
+            const clone = container.cloneNode(true);
+            const inputs = clone.querySelectorAll('input');
+            inputs.forEach(input => {
+                const parent = input.parentElement;
+                parent.textContent = input.value;
+            });
+
+            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Timesheet Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+            <body>${clone.innerHTML}</body></html>`;
+
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Timesheet_Report_${document.getElementById('report-start').value}_to_${document.getElementById('report-end').value}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // SIGNIFI SUMMARY REPORT ENGINE
+        function toggleSignifiDeptFilter(dept) {
+            if (dept === 'All') {
+                currentSignifiDeptFilters = ['All'];
+            } else {
+                currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== 'All');
+                if (currentSignifiDeptFilters.includes(dept)) {
+                    currentSignifiDeptFilters = currentSignifiDeptFilters.filter(d => d !== dept);
+                    if (currentSignifiDeptFilters.length === 0) currentSignifiDeptFilters = ['All'];
+                } else {
+                    currentSignifiDeptFilters.push(dept);
+                }
+            }
+            generateSignifiSummary();
         }
 
         async function generateSignifiSummary() {
@@ -2261,21 +2307,37 @@
             const endStr = document.getElementById('summary-end').value;
             const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
 
-            if (!startStr || !endStr) {
-                alert("Please select both Start and End date.");
-                return;
-            }
+            if (!startStr || !endStr) return alert("Select start and end dates.");
 
             const container = document.getElementById('summary-container');
-            container.innerHTML = "<p>Generating Signifi Summary Report...</p>";
+            container.innerHTML = "<p>Loading Signifi Summary...</p>";
 
             try {
-                const { data: emps, error } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi');
-                if (error) throw error;
+                const { data: snapshot } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi');
+                const depts = new Set();
+                const empList = [];
 
-                const filteredEmps = (emps || []).filter(e => !e.isLaidOff);
+                (snapshot || []).forEach(emp => {
+                    if (emp.isLaidOff) return;
+                    const d = emp.department ? emp.department.trim() : 'General';
+                    depts.add(d);
+                    if (currentSignifiDeptFilters.includes('All') || currentSignifiDeptFilters.includes(d)) {
+                        empList.push(emp);
+                    }
+                });
 
-                filteredEmps.sort((a, b) => {
+                // Render dynamic Signifi department tabs
+                const signifiDeptTabs = document.getElementById('dynamic-signifi-dept-tabs');
+                if (signifiDeptTabs) {
+                    let dHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
+                    Array.from(depts).sort().forEach(dept => {
+                        const safeDept = dept.replace(/'/g, "\\'");
+                        dHtml += `<button class="filter-btn ${currentSignifiDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeDept}')">${dept}</button>`;
+                    });
+                    signifiDeptTabs.innerHTML = dHtml;
+                }
+
+                empList.sort((a, b) => {
                     if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
                     if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
                     if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
@@ -2283,88 +2345,65 @@
                     return 0;
                 });
 
-                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif; font-size:11pt;">
+                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif;">
                     <thead>
-                        <tr><th colspan="8" class="report-header-title" style="background:#bfbfbf; border:2px solid #000; padding:10px; font-size:18px;">Signifi Employee Summary Report (${startStr} to ${endStr})</th></tr>
-                        <tr style="background:#d9d9d9; font-weight:bold;">
+                        <tr style="background-color:#bfbfbf;">
+                            <th colspan="8" class="report-header-title">Signifi Employee Summary Report (${startStr} to ${endStr})</th>
+                        </tr>
+                        <tr style="background-color:#d9d9d9;">
                             <th>S.NO.</th>
-                            <th>Name</th>
+                            <th>Employee Name</th>
                             <th>Department</th>
                             <th>Pay Type</th>
                             <th>Vacation (Rem/Tot)</th>
-                            <th>Sick (Rem/Tot)</th>
+                            <th>Sick Days (Rem/Tot)</th>
                             <th>Paid Lieu (Rem/Tot)</th>
-                            <th>Notes</th>
+                            <th>Account Status</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
-                if (filteredEmps.length === 0) {
-                    html += `<tr><td colspan="8" style="text-align:center;">No Signifi employees found.</td></tr>`;
-                } else {
-                    filteredEmps.forEach((emp, idx) => {
-                        let vac = `${(emp.vacationTotal || 0) - (emp.vacationUsed || 0)} / ${emp.vacationTotal || 0}`;
-                        let sick = `${(emp.sickTotal || 0) - (emp.sickUsed || 0)} / ${emp.sickTotal || 0}`;
-                        let lieu = `${(emp.lieuTotal || 0) - (emp.lieuUsed || 0)} / ${emp.lieuTotal || 0}`;
+                empList.forEach((emp, idx) => {
+                    const vacRem = (emp.vacationTotal || 0) - (emp.vacationUsed || 0);
+                    const sickRem = (emp.sickTotal || 0) - (emp.sickUsed || 0);
+                    const lieuRem = (emp.lieuTotal || 0) - (emp.lieuUsed || 0);
 
-                        html += `<tr>
-                            <td>${idx + 1}</td>
-                            <td style="font-weight:bold; text-align:left; padding-left:10px;">${emp.name}</td>
-                            <td>${emp.department || 'General'}</td>
-                            <td>${emp.payType || 'Salaried'}</td>
-                            <td>${vac}</td>
-                            <td>${sick}</td>
-                            <td>${lieu}</td>
-                            <td>Active</td>
-                        </tr>`;
-                    });
-                }
+                    html += `<tr>
+                        <td><strong>${idx + 1}</strong></td>
+                        <td style="text-align:left; font-weight:bold;">${emp.name}</td>
+                        <td>${emp.department || 'General'}</td>
+                        <td>${emp.payType || 'Salaried'}</td>
+                        <td>${vacRem} / ${emp.vacationTotal || 0}</td>
+                        <td>${sickRem} / ${emp.sickTotal || 0}</td>
+                        <td>${lieuRem} / ${emp.lieuTotal || 0}</td>
+                        <td><span style="color:green; font-weight:bold;">Active</span></td>
+                    </tr>`;
+                });
 
                 html += `</tbody></table>`;
                 container.innerHTML = html;
 
-            } catch (e) {
-                container.innerHTML = `<p style="color:red;">Error loading summary: ${e.message}</p>`;
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = `<p style="color:red;">Error loading Signifi summary: ${e.message}</p>`;
             }
-        }
-
-        function exportReportToExcel() {
-            const reportContainer = document.getElementById('report-container');
-            if (!reportContainer || !reportContainer.querySelector('table')) {
-                alert("No report table available to export. Please generate a report first.");
-                return;
-            }
-            
-            let html = reportContainer.innerHTML;
-            html = html.replace(/<input[^>]*value="([^"]*)"[^>]*>/gi, "$1");
-            html = html.replace(/<input[^>]*>/gi, "");
-
-            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Timesheet_Report_${new Date().toISOString().slice(0,10)}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
         }
 
         function exportSummaryToExcel() {
-            const summaryContainer = document.getElementById('summary-container');
-            if (!summaryContainer || !summaryContainer.querySelector('table')) {
-                alert("No summary table available to export. Please generate a summary first.");
-                return;
+            const container = document.getElementById('summary-container');
+            if (!container || !container.querySelector('table')) {
+                return alert("No Signifi summary available to export.");
             }
 
-            let html = summaryContainer.innerHTML;
-            html = html.replace(/<input[^>]*value="([^"]*)"[^>]*>/gi, "$1");
-            html = html.replace(/<input[^>]*>/gi, "");
+            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Signifi Summary</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+            <body>${container.innerHTML}</body></html>`;
 
-            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Signifi_Summary_Report_${new Date().toISOString().slice(0,10)}.xls`;
+            a.download = `Signifi_Summary_${document.getElementById('summary-start').value}_to_${document.getElementById('summary-end').value}.xls`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
