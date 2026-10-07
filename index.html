@@ -8,10 +8,12 @@
     <link rel="icon" type="image/png" href="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true">
     
     <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <!-- JsBarcode for Barcode Generation -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     
@@ -41,10 +43,9 @@
             border-radius: 6px;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .top-center-logo {
-            max-height: 45px;
-            object-fit: contain;
+            font-weight: bold;
+            color: #8b1d24;
+            font-size: 1.2rem;
         }
         
         .bottom-title {
@@ -119,13 +120,8 @@
         .report-table { width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 14px; text-align: center; vertical-align: middle; margin-bottom: 40px; border: 2px solid #000; }
         .report-table th, .report-table td { border: 1px solid #000; padding: 6px; text-align: center; vertical-align: middle; }
         .report-header-title { background-color: #bfbfbf; font-weight: bold; font-size: 18px; padding: 10px !important; border: 2px solid #000; text-transform: capitalize; }
-        .text-green { color: #00b050; font-weight: bold; }
-        .row-break { color: #dc3545; }
-        
-        /* Interactive Input Styles for Report */
-        .note-input, .time-input { width: 100%; border: 1px solid transparent; text-align: center; background: transparent; font-family: Calibri, sans-serif; font-size: inherit; padding: 4px; box-sizing: border-box; color: inherit; }
-        .note-input:hover, .note-input:focus, .time-input:hover, .time-input:focus { border: 1px solid #ccc; background: #fff; outline: none; }
-        
+        .report-table input { width: 90%; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.9rem; }
+
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
@@ -139,7 +135,7 @@
     <div class="top-header-bar">
         <img src="https://github.com/idhaliwal284-spec/Up-Vision-Clock-IN-OUT/blob/main/logo%20upvision.PNG?raw=true" alt="Up Vision Logo" class="top-left-logo">
         <div class="top-center-logo-wrapper">
-            <img src="image_1fb393.png" alt="Signifi Solutions Inc. Logo" class="top-center-logo" onerror="this.onerror=null; this.alt='Signifi Solutions Inc.'; this.style.padding='5px';">
+            Signifi Solutions Inc.
         </div>
     </div>
     
@@ -542,15 +538,32 @@
 
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-            <h2 style="margin-top: 0;">Account Settings</h2>
-            
-            <div style="max-width: 400px; margin-bottom: 40px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                <h3 style="margin-top:0;">Change My Password</h3>
-                <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" id="new-my-password" placeholder="Enter a new password...">
+            <h2 style="margin-top: 0;">Account & Database Settings</h2>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- Supabase Database Configuration -->
+                <div style="flex: 1; min-width: 320px; max-width: 500px; margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                    <h3 style="margin-top:0; color: #007bff;">Supabase Database Connection</h3>
+                    <div class="form-group">
+                        <label>Supabase URL</label>
+                        <input type="text" id="cfg-supabase-url" placeholder="https://your-project.supabase.co">
+                    </div>
+                    <div class="form-group">
+                        <label>Supabase Anon Key</label>
+                        <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiI...">
+                    </div>
+                    <button class="action-btn" onclick="saveSupabaseConfig()" style="width: 100%; background: #007bff;">Save Database Credentials</button>
                 </div>
-                <button class="action-btn" onclick="changeMyPassword()" style="width: 100%;">Update Password</button>
+
+                <!-- Admin Password Settings -->
+                <div style="flex: 1; min-width: 320px; max-width: 400px; margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                    <h3 style="margin-top:0;">Change My Password</h3>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="new-my-password" placeholder="Enter a new password...">
+                    </div>
+                    <button class="action-btn" onclick="changeMyPassword()" style="width: 100%;">Update Password</button>
+                </div>
             </div>
 
             <div id="super-admin-section" style="display:none; border-top: 2px solid #ccc; padding-top: 30px;">
@@ -569,21 +582,64 @@
 
     <script>
         // === SUPABASE INITIALIZATION ===
-        const DIRECT_SUPABASE_URL = "https://gruqfhpxsovbcqyehqvp.supabase.co";
-        const DIRECT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydXFmaHB4c292YmNxeWVocXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTE2NjksImV4cCI6MjEwNjQ4NzY2OX0._eOp4dppOR-4V0Kg6J2QiFWdbtAm9UeQmMSQzgK6fGU";
-        const supabaseClient = supabase.createClient(DIRECT_SUPABASE_URL, DIRECT_SUPABASE_KEY);
+        let DIRECT_SUPABASE_URL = localStorage.getItem('cfg_supabase_url') || "https://vtzhrroecjavevdkannr.supabase.co";
+        let DIRECT_SUPABASE_KEY = localStorage.getItem('cfg_supabase_key') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0emhycm9lY2phdmV2ZGthbm5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNTM4OTcsImV4cCI6MjEwNjkyOTg5N30.Z2coFXveNKatGywySJGFyMhWIYmMrTZn1yayIuUJD-4";
+        
+        let supabaseClient;
+        
+        function initSupabase() {
+            try {
+                const createClientFunc = window.supabase ? window.supabase.createClient : null;
+                if (!createClientFunc) throw new Error("Supabase SDK not loaded properly.");
+                supabaseClient = createClientFunc(DIRECT_SUPABASE_URL, DIRECT_SUPABASE_KEY);
+                checkDatabaseConnection();
+            } catch(e) {
+                console.error("Supabase Initialization Error:", e);
+                const statusCircle = document.getElementById('connection-status');
+                if (statusCircle) {
+                    statusCircle.style.backgroundColor = '#dc3545';
+                    statusCircle.title = "Supabase configuration invalid.";
+                }
+            }
+        }
 
         // Database Connection Status Check
-        const statusCircle = document.getElementById('connection-status');
-        supabaseClient.from('employees').select('id').limit(1).then(({ data, error }) => {
-            if (error) {
-                statusCircle.style.backgroundColor = '#dc3545'; 
-                statusCircle.title = "Database Error: " + error.message;
-            } else {
-                statusCircle.style.backgroundColor = '#28a745'; 
-                statusCircle.title = "Database Connected";
-            }
+        function checkDatabaseConnection() {
+            const statusCircle = document.getElementById('connection-status');
+            if (!supabaseClient) return;
+            supabaseClient.from('employees').select('id').limit(1).then(({ data, error }) => {
+                if (error) {
+                    statusCircle.style.backgroundColor = '#dc3545'; 
+                    statusCircle.title = "Database Error: " + error.message;
+                } else {
+                    statusCircle.style.backgroundColor = '#28a745'; 
+                    statusCircle.title = "Database Connected";
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initSupabase();
         });
+
+        function saveSupabaseConfig() {
+            const urlInput = document.getElementById('cfg-supabase-url').value.trim();
+            const keyInput = document.getElementById('cfg-supabase-key').value.trim();
+
+            if (!urlInput || !keyInput) {
+                return alert("Please enter both Supabase URL and Key.");
+            }
+
+            localStorage.setItem('cfg_supabase_url', urlInput);
+            localStorage.setItem('cfg_supabase_key', keyInput);
+            
+            DIRECT_SUPABASE_URL = urlInput;
+            DIRECT_SUPABASE_KEY = keyInput;
+
+            initSupabase();
+            alert("Database credentials saved! System re-connected.");
+            loadEmployees();
+        }
 
         function formatTimeStr(dateObj) {
             if (!dateObj) return "";
@@ -605,6 +661,44 @@
         let viewingLaidOff = false;
 
         let globalHistoryData = [];
+
+        // TIME PARSER UTILITY
+        const parseTimeString = (str) => {
+            if (!str) return null;
+            let clean = str.trim().toLowerCase();
+            if (!clean || clean === '0' || clean === '0:00' || clean === 'off' || clean === 'missed') return null;
+
+            let isPm = clean.includes('p');
+            let isAm = clean.includes('a');
+            clean = clean.replace(/[^0-9:]/g, '');
+
+            let hours = 0, mins = 0;
+            if (clean.includes(':')) {
+                let parts = clean.split(':');
+                hours = parseInt(parts[0], 10) || 0;
+                mins = parseInt(parts[1], 10) || 0;
+            } else if (clean.length === 3) {
+                hours = parseInt(clean.substring(0, 1), 10);
+                mins = parseInt(clean.substring(1), 10);
+            } else if (clean.length === 4) {
+                hours = parseInt(clean.substring(0, 2), 10);
+                mins = parseInt(clean.substring(2), 10);
+            } else {
+                hours = parseInt(clean, 10) || 0;
+            }
+
+            if (isPm && hours < 12) hours += 12;
+            if (isAm && hours === 12) hours = 0;
+
+            return hours * 60 + mins;
+        };
+
+        const formatMinsToTime = (mins) => {
+            if (mins <= 0 || isNaN(mins)) return "";
+            let h = Math.floor(mins / 60);
+            let m = mins % 60;
+            return h + ":" + m.toString().padStart(2, '0');
+        };
 
         // LIVE TIMESHEET RECALCULATION ENGINE
         window.recalcTime = function(gIdx, eIdx, colIdx, numCols, empType, payType, changedField = '') {
@@ -631,48 +725,39 @@
             const outVal = outInput.value.trim();
             const thirdVal = breakInput.value.trim();
 
-            const parseTime = (str) => {
-                if(!str || !str.includes(':')) return 0;
-                let parts = str.split(':');
-                return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-            };
-
-            const formatTime = (mins) => {
-                if(mins === 0 && (!inVal || !outVal)) return "";
-                let h = Math.floor(mins / 60);
-                let m = mins % 60;
-                return h + ":" + m.toString().padStart(2, '0');
-            };
-
             let newTotal = "";
             let newThird = thirdVal; 
             
             if (inVal && outVal && outVal.toLowerCase() !== "missed") {
-                let inM = parseTime(inVal);
-                let outM = parseTime(outVal);
-                let diff = Math.max(0, outM - inM);
-                
-                if (isSignifi) {
-                    if (isHourly) {
-                        newTotal = formatTime(diff);
-                        newThird = ""; 
-                    } else {
-                        if (diff >= 480) {
-                            newTotal = "Full Day";
-                            let ext = diff - 480;
-                            if (ext > 0) newThird = formatTime(ext);
-                            else newThird = "";
+                let inM = parseTimeString(inVal);
+                let outM = parseTimeString(outVal);
+
+                if (inM !== null && outM !== null) {
+                    if (outM < inM) outM += 1440; // Overnight shift handling
+                    let diff = Math.max(0, outM - inM);
+                    
+                    if (isSignifi) {
+                        if (isHourly) {
+                            newTotal = formatMinsToTime(diff);
+                            newThird = ""; 
                         } else {
-                            newTotal = formatTime(diff);
-                            newThird = "";
+                            if (diff >= 480) {
+                                newTotal = "Full Day";
+                                let ext = diff - 480;
+                                if (ext > 0) newThird = formatMinsToTime(ext);
+                                else newThird = "";
+                            } else {
+                                newTotal = formatMinsToTime(diff);
+                                newThird = "";
+                            }
                         }
+                    } else {
+                        if (diff > 240 && thirdVal === "") {
+                            newThird = "0:45";
+                        }
+                        let bM = parseTimeString(newThird) || 0;
+                        newTotal = formatMinsToTime(Math.max(0, diff - bM));
                     }
-                } else {
-                    if (diff > 240 && thirdVal === "") {
-                        newThird = "0:45";
-                    }
-                    let bM = parseTime(newThird);
-                    newTotal = formatTime(Math.max(0, diff - bM));
                 }
             }
 
@@ -711,11 +796,11 @@
                             totalMins += 480; 
                             leavesList.push(cell.value.trim());
                         } else if (!tVal.includes('off') && tVal !== "") {
-                            totalMins += parseTime(tVal);
+                            totalMins += (parseTimeString(tVal) || 0);
                         }
                     }
                     const fullDaysEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
-                    if (fullDaysEl) fullDaysEl.innerText = `${formatTime(totalMins)} Hours`;
+                    if (fullDaysEl) fullDaysEl.innerText = `${formatMinsToTime(totalMins)} Hours`;
                     
                     const extraHrsEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
                     if (extraHrsEl) extraHrsEl.innerText = ""; 
@@ -746,14 +831,14 @@
                         if (tVal.includes('vacation') || tVal.includes('sick') || tVal.includes('paid lieu') || tVal.includes('stat holiday')) {
                             leavesList.push(tCell.value.trim());
                         }
-                        extraHrsMins += parseTime(extVal);
+                        extraHrsMins += (parseTimeString(extVal) || 0);
                     }
                     
                     const fullDaysEl = document.getElementById(`fulldays_${gIdx}_${eIdx}`);
                     if (fullDaysEl) fullDaysEl.innerText = `${fullDaysCount} Days`;
                     
                     const extraHrsEl = document.getElementById(`extrahrs_${gIdx}_${eIdx}`);
-                    if (extraHrsEl) extraHrsEl.innerText = formatTime(extraHrsMins) || "0:00";
+                    if (extraHrsEl) extraHrsEl.innerText = formatMinsToTime(extraHrsMins) || "0:00";
                     
                     let leaveSummary = {};
                     leavesList.forEach(l => {
@@ -768,10 +853,10 @@
                 for(let i=0; i<numCols; i++) {
                     let tCell = document.getElementById(`total_${gIdx}_${eIdx}_${i}`);
                     if (!tCell) continue;
-                    empTotal += parseTime(tCell.value.trim());
+                    empTotal += (parseTimeString(tCell.value.trim()) || 0);
                 }
                 const empTotalEl = document.getElementById(`emptotal_${gIdx}_${eIdx}`);
-                if (empTotalEl) empTotalEl.innerText = formatTime(empTotal);
+                if (empTotalEl) empTotalEl.innerText = formatMinsToTime(empTotal);
             }
 
             if (isSignifi) {
@@ -783,7 +868,7 @@
                 document.querySelectorAll(`.group-fulldays-${gIdx}`).forEach(el => {
                     let txt = el.innerText || "";
                     if (txt.includes('Days')) {
-                        grpFullDays += parseInt(txt) || 0;
+                        grpFullDays += parseInt(txt, 10) || 0;
                         hasSalaried = true;
                     } else if (txt.includes('Hours')) {
                         hasHourly = true;
@@ -791,7 +876,7 @@
                 });
                 document.querySelectorAll(`.group-extrahrs-${gIdx}`).forEach(el => {
                     let txt = el.innerText || "";
-                    grpExtraHrs += parseTime(txt);
+                    grpExtraHrs += (parseTimeString(txt) || 0);
                 });
                 
                 if(document.getElementById(`grouptotal_fulldays_${gIdx}`)) {
@@ -802,14 +887,14 @@
                     }
                 }
                 if(document.getElementById(`grouptotal_extrahrs_${gIdx}`)) {
-                    document.getElementById(`grouptotal_extrahrs_${gIdx}`).innerText = formatTime(grpExtraHrs) || "";
+                    document.getElementById(`grouptotal_extrahrs_${gIdx}`).innerText = formatMinsToTime(grpExtraHrs) || "";
                 }
             } else {
                 let groupTotal = 0;
                 document.querySelectorAll(`.group-emptotal-${gIdx}`).forEach(el => {
-                    groupTotal += parseTime(el.innerText);
+                    groupTotal += (parseTimeString(el.innerText) || 0);
                 });
-                if(document.getElementById(`grouptotal_${gIdx}`)) document.getElementById(`grouptotal_${gIdx}`).innerText = formatTime(groupTotal);
+                if(document.getElementById(`grouptotal_${gIdx}`)) document.getElementById(`grouptotal_${gIdx}`).innerText = formatMinsToTime(groupTotal);
             }
         };
 
@@ -820,10 +905,11 @@
                 const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59, 999).toISOString();
                 const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
                 
-                const { data: empsData } = await supabaseClient.from('employees').select('id, isLaidOff');
+                const { data: empsData } = await supabaseClient.from('employees').select('id, isLaidOff, islaidoff');
                 const allEmpIds = [];
                 (empsData || []).forEach(emp => {
-                    if (!emp.isLaidOff) allEmpIds.push(emp.id);
+                    const isLaidOff = emp.isLaidOff ?? emp.islaidoff;
+                    if (!isLaidOff) allEmpIds.push(emp.id);
                 });
 
                 const { data: overrides } = await supabaseClient.from('timesheet_overrides').select('empId').eq('date', dateStr);
@@ -838,10 +924,11 @@
 
                 const employeeShifts = {};
                 (shifts || []).forEach(data => {
-                    if (!employeeShifts[data.employeeId]) {
-                        employeeShifts[data.employeeId] = [];
+                    const empIdKey = data.employeeId || data.employeeid;
+                    if (!employeeShifts[empIdKey]) {
+                        employeeShifts[empIdKey] = [];
                     }
-                    employeeShifts[data.employeeId].push(data);
+                    employeeShifts[empIdKey].push(data);
                 });
 
                 const newOverrides = [];
@@ -962,7 +1049,8 @@
                 }
                 
                 pendingEmpData = empDoc;
-                if(pendingEmpData.isLaidOff) {
+                const isLaidOff = empDoc.isLaidOff ?? empDoc.islaidoff;
+                if(isLaidOff) {
                     statusDiv.className = 'status-message error';
                     statusDiv.innerText = 'Badge inactive. Please contact Admin.';
                     setTimeout(() => {
@@ -1140,8 +1228,9 @@
             if (!user || !pass) return alert('Enter both username and password.');
 
             try {
-                const { data: admins } = await supabaseClient.from('admins').select('*').eq('username', user);
-                
+                const { data: admins, error } = await supabaseClient.from('admins').select('*').eq('username', user);
+                if (error) throw error;
+
                 if (admins && admins.length > 0) {
                     const adminDoc = admins[0];
                     if (adminDoc.password === pass) {
@@ -1188,7 +1277,11 @@
             
             if (tabId === 'employees') loadEmployees();
             if (tabId === 'history') loadHistory();
-            if (tabId === 'settings' && currentAdminRole === 'Super Admin') loadAdminUsers();
+            if (tabId === 'settings') {
+                document.getElementById('cfg-supabase-url').value = DIRECT_SUPABASE_URL;
+                document.getElementById('cfg-supabase-key').value = DIRECT_SUPABASE_KEY;
+                if (currentAdminRole === 'Super Admin') loadAdminUsers();
+            }
             if (tabId === 'reports') {
                 if(!document.getElementById('report-start').value) {
                     let d = new Date();
@@ -1343,7 +1436,8 @@
             if(confirm(`Are you sure you want to ${actionText} employee "${name}"?`)) {
                 try {
                     const { error } = await supabaseClient.from('employees').update({
-                        isLaidOff: !currentlyLaidOff
+                        isLaidOff: !currentlyLaidOff,
+                        islaidoff: !currentlyLaidOff
                     }).eq('id', badgeId);
                     if (error) throw error;
                     loadEmployees();
@@ -1373,6 +1467,7 @@
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Loading...</td></tr>';
             
             try {
+                if (!supabaseClient) throw new Error("Supabase client not initialized");
                 const { data: snapshot, error } = await supabaseClient.from('employees').select('*');
                 if (error) throw error;
 
@@ -1389,15 +1484,16 @@
                 let totalActiveCount = 0;
 
                 snapshot.forEach(emp => {
-                    const isLaidOff = emp.isLaidOff === true;
+                    const isLaidOff = emp.isLaidOff ?? emp.islaidoff ?? false;
+                    const agencyName = emp.agencyName || emp.agencyname;
                     
                     if (!isLaidOff) totalActiveCount++;
 
                     if (viewingLaidOff && isLaidOff) {
-                        if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
+                        if (emp.type === 'Agency') agencies.add(agencyName ? agencyName.trim() : 'Unnamed Agency');
                         depts.add(emp.department ? emp.department.trim() : 'General');
                     } else if (!viewingLaidOff && !isLaidOff) {
-                        if (emp.type === 'Agency') agencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
+                        if (emp.type === 'Agency') agencies.add(agencyName ? agencyName.trim() : 'Unnamed Agency');
                         depts.add(emp.department ? emp.department.trim() : 'General');
                     }
                 });
@@ -1421,14 +1517,24 @@
 
                 const renderEmployeeRow = (emp, sNo) => {
                     const safeEmpJson = JSON.stringify(emp).replace(/"/g, '&quot;');
-                    let displayAgency = (emp.type === 'Agency') ? (emp.agencyName || 'Unnamed Agency') : '-';
-                    let displayPay = (emp.type === 'Signifi') ? (emp.payType || 'Salaried') : '-';
-                    
-                    let displayVac = (emp.type === 'Signifi') ? `${(emp.vacationTotal || 0) - (emp.vacationUsed || 0)} / ${emp.vacationTotal || 0}` : 'N/A';
-                    let displaySick = (emp.type === 'Signifi') ? `${(emp.sickTotal || 0) - (emp.sickUsed || 0)} / ${emp.sickTotal || 0}` : 'N/A';
-                    let displayLieu = (emp.type === 'Signifi') ? `${(emp.lieuTotal || 0) - (emp.lieuUsed || 0)} / ${emp.lieuTotal || 0}` : 'N/A';
+                    const agencyName = emp.agencyName || emp.agencyname;
+                    const payType = emp.payType || emp.paytype;
+                    const vacTotal = emp.vacationTotal ?? emp.vacationtotal ?? 0;
+                    const vacUsed = emp.vacationUsed ?? emp.vacationused ?? 0;
+                    const sickTot = emp.sickTotal ?? emp.sicktotal ?? 0;
+                    const sickUsd = emp.sickUsed ?? emp.sickused ?? 0;
+                    const lieuTot = emp.lieuTotal ?? emp.lieutotal ?? 0;
+                    const lieuUsd = emp.lieuUsed ?? emp.lieuused ?? 0;
+                    const isLaidOff = emp.isLaidOff ?? emp.islaidoff ?? false;
 
-                    let layOffBtn = emp.isLaidOff 
+                    let displayAgency = (emp.type === 'Agency') ? (agencyName || 'Unnamed Agency') : '-';
+                    let displayPay = (emp.type === 'Signifi') ? (payType || 'Salaried') : '-';
+                    
+                    let displayVac = (emp.type === 'Signifi') ? `${vacTotal - vacUsed} / ${vacTotal}` : 'N/A';
+                    let displaySick = (emp.type === 'Signifi') ? `${sickTot - sickUsd} / ${sickTot}` : 'N/A';
+                    let displayLieu = (emp.type === 'Signifi') ? `${lieuTot - lieuUsd} / ${lieuTot}` : 'N/A';
+
+                    let layOffBtn = isLaidOff 
                         ? `<button class="small-btn" style="background-color: #20c997;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', true)">Restore</button>`
                         : `<button class="small-btn" style="background-color: #fd7e14;" onclick="toggleEmployeeLayOff('${emp.id}', '${emp.name.replace(/'/g, "\\'")}', false)">Lay Off</button>`;
 
@@ -1455,9 +1561,10 @@
                 let empList = [];
 
                 snapshot.forEach(emp => {
-                    const empAgency = emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency';
+                    const agencyName = emp.agencyName || emp.agencyname;
+                    const empAgency = agencyName ? agencyName.trim() : 'Unnamed Agency';
                     const empDept = emp.department ? emp.department.trim() : 'General';
-                    const isLaidOff = emp.isLaidOff === true;
+                    const isLaidOff = emp.isLaidOff ?? emp.islaidoff ?? false;
 
                     if (viewingLaidOff && !isLaidOff) return;
                     if (!viewingLaidOff && isLaidOff) return;
@@ -1477,14 +1584,16 @@
                 });
 
                 empList.sort((a, b) => {
+                    const aCreated = a.createdAt || a.createdat || 0;
+                    const bCreated = b.createdAt || b.createdat || 0;
                     if (sortVal === 'name_asc') {
                         return (a.name || '').localeCompare(b.name || '');
                     } else if (sortVal === 'name_desc') {
                         return (b.name || '').localeCompare(a.name || '');
                     } else if (sortVal === 'newest') {
-                        return (b.createdAt || 0) - (a.createdAt || 0);
+                        return bCreated - aCreated;
                     } else if (sortVal === 'oldest') {
-                        return (a.createdAt || 0) - (b.createdAt || 0);
+                        return aCreated - bCreated;
                     }
                     return 0;
                 });
@@ -1499,7 +1608,7 @@
 
             } catch(e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">Database not connected. Check Supabase config.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">Database not connected. Go to Settings tab to update Supabase config.</td></tr>';
             }
         }
 
@@ -1531,18 +1640,29 @@
             if (empData) {
                 title.innerText = "Edit Employee Information";
                 saveBtn.innerText = "Update Employee";
+                
+                const agencyName = empData.agencyName || empData.agencyname;
+                const payType = empData.payType || empData.paytype;
+                const vacTotal = empData.vacationTotal ?? empData.vacationtotal;
+                const vacUsed = empData.vacationUsed ?? empData.vacationused;
+                const sickTot = empData.sickTotal ?? empData.sicktotal;
+                const sickUsd = empData.sickUsed ?? empData.sickused;
+                const lieuTot = empData.lieuTotal ?? empData.lieutotal;
+                const lieuUsd = empData.lieuUsed ?? empData.lieuused;
+                const createdAt = empData.createdAt || empData.createdat || '';
+
                 document.getElementById('emp-original-id').value = empData.id;
-                document.getElementById('emp-created-at').value = empData.createdAt || '';
+                document.getElementById('emp-created-at').value = createdAt;
                 document.getElementById('emp-id').value = empData.id;
                 document.getElementById('emp-name').value = empData.name;
-                document.getElementById('emp-pay-type').value = empData.payType || 'Salaried';
+                document.getElementById('emp-pay-type').value = payType || 'Salaried';
                 
-                if (empData.vacationTotal !== undefined) document.getElementById('emp-vacation-total').value = empData.vacationTotal;
-                if (empData.vacationUsed !== undefined) document.getElementById('emp-vacation-used').value = empData.vacationUsed;
-                if (empData.sickTotal !== undefined) document.getElementById('emp-sick-total').value = empData.sickTotal;
-                if (empData.sickUsed !== undefined) document.getElementById('emp-sick-used').value = empData.sickUsed;
-                if (empData.lieuTotal !== undefined) document.getElementById('emp-lieu-total').value = empData.lieuTotal;
-                if (empData.lieuUsed !== undefined) document.getElementById('emp-lieu-used').value = empData.lieuUsed;
+                if (vacTotal !== undefined) document.getElementById('emp-vacation-total').value = vacTotal;
+                if (vacUsed !== undefined) document.getElementById('emp-vacation-used').value = vacUsed;
+                if (sickTot !== undefined) document.getElementById('emp-sick-total').value = sickTot;
+                if (sickUsd !== undefined) document.getElementById('emp-sick-used').value = sickUsd;
+                if (lieuTot !== undefined) document.getElementById('emp-lieu-total').value = lieuTot;
+                if (lieuUsd !== undefined) document.getElementById('emp-lieu-used').value = lieuUsd;
 
                 const predefinedDepts = ['Production', 'Inventory', 'Quality'];
                 if (predefinedDepts.includes(empData.department)) {
@@ -1556,11 +1676,11 @@
                     document.getElementById('emp-type-select').value = 'Signifi';
                 } else {
                     const predefinedAgencies = ['T-DOT', 'Carrier Club'];
-                    if (predefinedAgencies.includes(empData.agencyName)) {
-                        document.getElementById('emp-type-select').value = empData.agencyName;
+                    if (predefinedAgencies.includes(agencyName)) {
+                        document.getElementById('emp-type-select').value = agencyName;
                     } else {
                         document.getElementById('emp-type-select').value = 'custom';
-                        document.getElementById('emp-type-custom').value = empData.agencyName;
+                        document.getElementById('emp-type-custom').value = agencyName;
                     }
                 }
                 
@@ -1650,7 +1770,17 @@
                     lieuTotal: lieuTot,
                     lieuUsed: lieuUsd,
                     createdAt: empCreatedAt,
-                    isLaidOff: false
+                    isLaidOff: false,
+                    paytype: payType,
+                    agencyname: agency,
+                    vacationtotal: vacTotal,
+                    vacationused: vacUsed,
+                    sicktotal: sickTot,
+                    sickused: sickUsd,
+                    lieutotal: lieuTot,
+                    lieuused: lieuUsd,
+                    createdat: empCreatedAt,
+                    islaidoff: false
                 });
 
                 if (error) throw error;
@@ -1820,473 +1950,6 @@
             generateReport();
         }
 
-        function renderDeptFilters() {
-            const container = document.getElementById('dynamic-dept-filter-tabs');
-            if (!container) return;
-            
-            let html = `<button class="filter-btn ${currentDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleDeptFilter('All')">All</button>`;
-            
-            availableDepartments.forEach(dept => {
-                const safeDept = dept.replace(/'/g, "\\'");
-                html += `<button class="filter-btn ${currentDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleDeptFilter('${safeDept}')">${dept}</button>`;
-            });
-            
-            container.innerHTML = html;
-        }
-
-        window.applyStatHoliday = function() {
-            const statDateStr = document.getElementById('stat-holiday-date').value;
-            if (!statDateStr) return alert("Please select a date for the Stat Holiday.");
-            
-            const totalInputs = document.querySelectorAll(`.total-input[data-date="${statDateStr}"]`);
-            if (totalInputs.length === 0) {
-                return alert("The selected date is not in the currently generated report. Please ensure the date falls within the selected range and generate the report first.");
-            }
-            
-            if (!confirm(`Apply Stat Holiday rules to all employees for ${statDateStr}?\n\nSignifi = 8 Paid Hours\nAgencies = Off`)) return;
-            
-            totalInputs.forEach(input => {
-                const empType = input.dataset.emptype;
-                if (empType === 'Signifi') {
-                    input.value = "Stat Holiday";
-                } else if (empType === 'Agency') {
-                    input.value = "Off";
-                }
-                
-                input.dispatchEvent(new Event('change'));
-            });
-            
-            alert("Stat Holiday applied to the report! Click 'Save Changes' to permanently save to the database.");
-        };
-
-        async function saveReportChanges() {
-            const btn = document.getElementById('save-changes-btn');
-            btn.innerText = "Saving...";
-            
-            try {
-                const timeInputs = document.querySelectorAll('.time-input');
-                const overrideMap = {};
-                const empDeltas = {}; 
-                
-                timeInputs.forEach(input => {
-                    const empId = input.dataset.empid;
-                    const dateStr = input.dataset.date;
-                    const field = input.dataset.field;
-                    let val = input.value.trim();
-                    
-                    if (empId && dateStr && field) {
-                        let skipOverride = false;
-                        if (field === 'out' && val.toLowerCase() === 'missed') skipOverride = true;
-                        if (field === 'in' && val === '') skipOverride = true;
-
-                        if (!skipOverride) {
-                            const docId = empId + "_" + dateStr;
-                            if (!overrideMap[docId]) {
-                                overrideMap[docId] = { id: docId, empId: empId, date: dateStr };
-                            }
-                            overrideMap[docId][field] = val;
-                        }
-
-                        if (field === 'total') {
-                            if (!empDeltas[empId]) empDeltas[empId] = { vac: 0, sick: 0, lieu: 0 };
-                            
-                            let oldVal = (input.dataset.original || "").toLowerCase();
-                            let newVal = val.toLowerCase();
-
-                            let oldIsVac = oldVal.includes('vacation');
-                            let oldIsSick = oldVal.includes('sick');
-                            let oldIsLieu = oldVal.includes('paid lieu');
-
-                            let newIsVac = newVal.includes('vacation');
-                            let newIsSick = newVal.includes('sick');
-                            let newIsLieu = newVal.includes('paid lieu');
-
-                            if (newIsVac && !oldIsVac) empDeltas[empId].vac++;
-                            if (!newIsVac && oldIsVac) empDeltas[empId].vac--;
-
-                            if (newIsSick && !oldIsSick) empDeltas[empId].sick++;
-                            if (!newIsSick && oldIsSick) empDeltas[empId].sick--;
-
-                            if (newIsLieu && !oldIsLieu) empDeltas[empId].lieu++;
-                            if (!newIsLieu && oldIsLieu) empDeltas[empId].lieu--;
-
-                            input.dataset.original = val;
-                        }
-                    }
-                });
-                
-                const overridesList = Object.values(overrideMap);
-                if (overridesList.length > 0) {
-                    const { error: ovError } = await supabaseClient.from('timesheet_overrides').upsert(overridesList);
-                    if (ovError) throw ovError;
-                }
-                
-                for (let empId of Object.keys(empDeltas)) {
-                    let delta = empDeltas[empId];
-                    if (delta.vac !== 0 || delta.sick !== 0 || delta.lieu !== 0) {
-                        const { data: empData } = await supabaseClient.from('employees').select('*').eq('id', empId).maybeSingle();
-                        if (empData) {
-                            let newVac = Math.max(0, (empData.vacationUsed || 0) + delta.vac);
-                            let newSick = Math.max(0, (empData.sickUsed || 0) + delta.sick);
-                            let newLieu = Math.max(0, (empData.lieuUsed || 0) + delta.lieu);
-                            await supabaseClient.from('employees').update({
-                                vacationUsed: newVac,
-                                sickUsed: newSick,
-                                lieuUsed: newLieu
-                            }).eq('id', empId);
-                        }
-                    }
-                }
-
-                const noteInputs = document.querySelectorAll('.note-input');
-                const notesList = [];
-                noteInputs.forEach(input => {
-                    const empId = input.dataset.empid;
-                    if(empId) {
-                        notesList.push({ id: empId, note: input.value });
-                    }
-                });
-                
-                if (notesList.length > 0) {
-                    await supabaseClient.from('timesheet_notes').upsert(notesList);
-                }
-                
-                alert("Changes saved successfully! These edits will now persist.");
-                
-                generateReport(); 
-                loadEmployees(); 
-            } catch(e) {
-                console.error(e);
-                alert("Error saving changes: " + e.message);
-            }
-            btn.innerText = "Save Changes";
-        }
-
-        async function generateReport() {
-            const startStr = document.getElementById('report-start').value;
-            const endStr = document.getElementById('report-end').value;
-            const sortVal = document.getElementById('report-sort') ? document.getElementById('report-sort').value : 'name_asc';
-            
-            if (!startStr || !endStr) {
-                alert("Please select both a Start Date and End Date.");
-                return;
-            }
-            
-            const [sYear, sMonth, sDay] = startStr.split('-');
-            const startD = new Date(sYear, sMonth - 1, sDay);
-            
-            const [eYear, eMonth, eDay] = endStr.split('-');
-            const endD = new Date(eYear, eMonth - 1, eDay);
-            
-            if (endD < startD) {
-                alert("End date must be after start date.");
-                return;
-            }
-
-            const rangeDates = [];
-            let currentD = new Date(startD);
-            while (currentD <= endD) {
-                rangeDates.push(new Date(currentD));
-                currentD.setDate(currentD.getDate() + 1);
-            }
-
-            if (rangeDates.length > 31) {
-                alert("Please select a date range of 31 days or less to prevent slow loading.");
-                return;
-            }
-
-            const queryEndD = new Date(endD);
-            queryEndD.setHours(23, 59, 59, 999);
-
-            const container = document.getElementById('report-container');
-            const filterTabsContainer = document.getElementById('dynamic-report-filter-tabs');
-            container.innerHTML = "<p>Loading timesheets...</p>";
-
-            try {
-                const { data: empsSnapshot, error: empErr } = await supabaseClient.from("employees").select("*");
-                if (empErr) throw empErr;
-
-                const employees = {};
-                const reportAgencies = new Set();
-                const reportDepts = new Set();
-                
-                (empsSnapshot || []).forEach(emp => { 
-                    if (emp.isLaidOff) return;
-
-                    employees[emp.id] = emp; 
-                    if (emp.type === 'Agency') {
-                        reportAgencies.add(emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
-                    }
-                    reportDepts.add(emp.department ? emp.department.trim() : 'General');
-                });
-                
-                availableDepartments = Array.from(reportDepts).sort();
-                renderDeptFilters();
-
-                const { data: overridesSnap } = await supabaseClient.from("timesheet_overrides")
-                    .select("*")
-                    .gte("date", startStr)
-                    .lte("date", endStr);
-                const overridesData = {};
-                (overridesSnap || []).forEach(doc => overridesData[doc.id] = doc);
-
-                const { data: notesSnap } = await supabaseClient.from("timesheet_notes").select("*");
-                const notesData = {};
-                (notesSnap || []).forEach(doc => notesData[doc.id] = doc.note);
-
-                let tabsHtml = `<button class="filter-btn ${currentReportFilter === 'All' ? 'active' : ''}" onclick="setReportFilter('All')">All Reports</button>
-                                <button class="filter-btn ${currentReportFilter === 'Signifi' ? 'active' : ''}" onclick="setReportFilter('Signifi')">Signifi</button>`;
-                reportAgencies.forEach(agency => {
-                    const safeAgencyName = agency.replace(/'/g, "\\'");
-                    tabsHtml += `<button class="filter-btn ${currentReportFilter === agency ? 'active' : ''}" onclick="setReportFilter('${safeAgencyName}')">${agency}</button>`;
-                });
-                filterTabsContainer.innerHTML = tabsHtml;
-
-                const { data: shiftsSnap } = await supabaseClient.from("shifts")
-                    .select("*")
-                    .gte("timestamp", startD.toISOString())
-                    .lte("timestamp", queryEndD.toISOString())
-                    .order("timestamp", { ascending: true });
-                
-                const shiftData = {};
-                (shiftsSnap || []).forEach(s => {
-                    const d = new Date(s.timestamp); 
-                    
-                    const year = d.getFullYear();
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const dateStr = `${year}-${month}-${day}`;
-                    
-                    if (!shiftData[s.employeeId]) shiftData[s.employeeId] = {};
-                    if (!shiftData[s.employeeId][dateStr]) shiftData[s.employeeId][dateStr] = {};
-                    
-                    if (s.action === "IN" && !shiftData[s.employeeId][dateStr].in) {
-                        shiftData[s.employeeId][dateStr].in = d;
-                    } else if (s.action === "OUT") {
-                        shiftData[s.employeeId][dateStr].out = d;
-                    }
-                });
-
-                const groups = {}; 
-                for (let empId in employees) {
-                    let emp = employees[empId];
-                    let agencyDisplay = (emp.type === 'Signifi') ? 'Signifi' : (emp.agencyName ? emp.agencyName.trim() : 'Unnamed Agency');
-                    let deptName = emp.department ? emp.department.trim() : 'General';
-                    
-                    if (currentReportFilter !== 'All' && agencyDisplay !== currentReportFilter) continue;
-                    if (!currentDeptFilters.includes('All') && !currentDeptFilters.includes(deptName)) continue;
-
-                    if (!groups[agencyDisplay]) groups[agencyDisplay] = {};
-                    if (!groups[agencyDisplay][deptName]) groups[agencyDisplay][deptName] = [];
-                    groups[agencyDisplay][deptName].push(emp);
-                }
-
-                const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                let html = "";
-                let gIdx = 0;
-
-                for (let agency in groups) {
-                    for (let dept in groups[agency]) {
-                        gIdx++;
-                        
-                        groups[agency][dept].sort((a, b) => {
-                            if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
-                            if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
-                            if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
-                            if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
-                            return 0;
-                        });
-                        
-                        let isSignifi = (agency === 'Signifi');
-                        let tableTitle = `${isSignifi ? 'Signifi' : agency} ${dept} - Timesheet`;
-                        let titleColspan = rangeDates.length + (isSignifi ? 7 : 6);
-
-                        html += `<table class="report-table" style="table-layout: fixed; width: 100%; border: 2px solid #000; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt; margin-bottom: 30px;">`;
-                        html += `<thead>`;
-                        html += `<tr><td colspan="${titleColspan}" class="report-header-title" style="background-color: #bfbfbf; border: 2px solid #000; font-size: 18px; padding: 10px; font-weight: bold; text-align: center;">${tableTitle}</td></tr>`;
-                        
-                        html += `<tr style="background-color: #d9d9d9;">`;
-                        html += `<td rowspan="2" style="width:4%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">S.NO.</td>`;
-                        html += `<td rowspan="2" colspan="2" style="width:16%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Names</td>`;
-                        
-                        for (let i = 0; i < rangeDates.length; i++) { 
-                            let d = rangeDates[i];
-                            let dayName = dayNames[d.getDay()];
-                            let dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
-                            html += `<td style="border: 1px solid #000; font-weight: bold; text-align: center;">${dayName}<br>${dateLabel}</td>`;
-                        }
-
-                        if (isSignifi) {
-                            html += `<td rowspan="2" style="width:8%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Full Days</td>`;
-                            html += `<td rowspan="2" style="width:8%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Extra Hrs</td>`;
-                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Leaves Taken</td>`;
-                            html += `<td rowspan="2" style="width:12%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Notes</td>`;
-                        } else {
-                            html += `<td rowspan="2" style="width:10%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Total Hours</td>`;
-                            html += `<td rowspan="2" style="width:15%; border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">Notes</td>`;
-                        }
-                        html += `</tr>`;
-                        html += `<tr style="background-color: #e9ecef;"><td colspan="${rangeDates.length}" style="text-align:center; font-size: 0.85rem; padding: 2px;">IN / OUT / BREAK / TOTAL</td></tr>`;
-                        html += `</thead><tbody>`;
-
-                        let empList = groups[agency][dept];
-
-                        empList.forEach((emp, eIdx) => {
-                            let noteVal = notesData[emp.id] || "";
-
-                            // Row 1: IN
-                            html += `<tr>`;
-                            html += `<td rowspan="4" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${eIdx + 1}</td>`;
-                            html += `<td rowspan="4" colspan="2" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">${emp.name}<br><small style="font-weight:normal; color:#555;">(${emp.payType || 'Salaried'})</small></td>`;
-
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                let d = rangeDates[i];
-                                let year = d.getFullYear();
-                                let month = String(d.getMonth() + 1).padStart(2, '0');
-                                let day = String(d.getDate()).padStart(2, '0');
-                                let dateStr = `${year}-${month}-${day}`;
-
-                                let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let rawIn = shiftData[emp.id]?.[dateStr]?.in;
-                                let inVal = ov?.in !== undefined ? ov.in : (rawIn ? formatTimeStr(rawIn) : "");
-
-                                html += `<td style="border: 1px solid #000; padding: 2px;">
-                                    <input type="text" class="time-input" id="in_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="in" value="${inVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'in')">
-                                </td>`;
-                            }
-
-                            if (isSignifi) {
-                                html += `<td rowspan="4" id="fulldays_${gIdx}_${eIdx}" class="group-fulldays-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" id="extrahrs_${gIdx}_${eIdx}" class="group-extrahrs-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" id="leaves_${gIdx}_${eIdx}" style="border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 0.85rem;">-</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 2px;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}"></td>`;
-                            } else {
-                                html += `<td rowspan="4" id="emptotal_${gIdx}_${eIdx}" class="group-emptotal-${gIdx}" style="border: 1px solid #000; font-weight: bold; text-align: center; vertical-align: middle;">-</td>`;
-                                html += `<td rowspan="4" style="border: 1px solid #000; padding: 2px;"><input type="text" class="note-input" data-empid="${emp.id}" value="${noteVal}"></td>`;
-                            }
-                            html += `</tr>`;
-
-                            // Row 2: OUT
-                            html += `<tr>`;
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                let d = rangeDates[i];
-                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-                                let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let rawIn = shiftData[emp.id]?.[dateStr]?.in;
-                                let rawOut = shiftData[emp.id]?.[dateStr]?.out;
-                                let outVal = ov?.out !== undefined ? ov.out : (rawOut ? formatTimeStr(rawOut) : (rawIn ? "Missed" : ""));
-
-                                html += `<td style="border: 1px solid #000; padding: 2px;">
-                                    <input type="text" class="time-input" id="out_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="out" value="${outVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'out')">
-                                </td>`;
-                            }
-                            html += `</tr>`;
-
-                            // Row 3: BREAK
-                            html += `<tr>`;
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                let d = rangeDates[i];
-                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-                                let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let breakVal = ov?.break !== undefined ? ov.break : "";
-
-                                html += `<td style="border: 1px solid #000; padding: 2px;">
-                                    <input type="text" class="time-input" id="break_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="break" value="${breakVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'break')">
-                                </td>`;
-                            }
-                            html += `</tr>`;
-
-                            // Row 4: TOTAL
-                            html += `<tr>`;
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                let d = rangeDates[i];
-                                let dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-                                let ov = overridesData[`${emp.id}_${dateStr}`];
-                                let totalVal = ov?.total !== undefined ? ov.total : "";
-
-                                html += `<td style="border: 1px solid #000; padding: 2px;">
-                                    <input type="text" class="time-input total-input" id="total_${gIdx}_${eIdx}_${i}" data-empid="${emp.id}" data-date="${dateStr}" data-field="total" data-emptype="${emp.type}" data-original="${totalVal}" value="${totalVal}" onchange="recalcTime(${gIdx}, ${eIdx}, ${i}, ${rangeDates.length}, '${emp.type}', '${emp.payType}', 'total')">
-                                </td>`;
-                            }
-                            html += `</tr>`;
-                        });
-
-                        // Summary Row
-                        html += `<tr style="background-color: #d9d9d9; font-weight: bold;">`;
-                        html += `<td colspan="3" style="border: 1px solid #000; text-align: right; padding: 6px;">Total:</td>`;
-                        html += `<td colspan="${rangeDates.length}" style="border: 1px solid #000;"></td>`;
-                        if (isSignifi) {
-                            html += `<td id="grouptotal_fulldays_${gIdx}" style="border: 1px solid #000; text-align: center;">0 Days</td>`;
-                            html += `<td id="grouptotal_extrahrs_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
-                            html += `<td style="border: 1px solid #000;"></td>`;
-                        } else {
-                            html += `<td id="grouptotal_${gIdx}" style="border: 1px solid #000; text-align: center;">0:00</td>`;
-                        }
-                        html += `<td style="border: 1px solid #000;"></td>`;
-                        html += `</tr>`;
-
-                        html += `</tbody></table>`;
-                    }
-                }
-
-                if (html === "") {
-                    container.innerHTML = "<p>No matching employee timesheet records found for the selected filters.</p>";
-                    return;
-                }
-
-                container.innerHTML = html;
-
-                // Initial Recalculation Pass
-                gIdx = 0;
-                for (let agency in groups) {
-                    for (let dept in groups[agency]) {
-                        gIdx++;
-                        let empList = groups[agency][dept];
-                        empList.forEach((emp, eIdx) => {
-                            for (let i = 0; i < rangeDates.length; i++) {
-                                recalcTime(gIdx, eIdx, i, rangeDates.length, emp.type, emp.payType);
-                            }
-                        });
-                    }
-                }
-
-            } catch(e) {
-                console.error("Report generation failed:", e);
-                container.innerHTML = `<p style="color:red;">Error generating report: ${e.message}</p>`;
-            }
-        }
-
-        function exportReportToExcel() {
-            const container = document.getElementById('report-container');
-            if (!container || !container.querySelector('table')) {
-                return alert("No report data available to export. Please generate a report first.");
-            }
-
-            const clone = container.cloneNode(true);
-            const inputs = clone.querySelectorAll('input');
-            inputs.forEach(input => {
-                const parent = input.parentElement;
-                parent.textContent = input.value;
-            });
-
-            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Timesheet Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
-            <body>${clone.innerHTML}</body></html>`;
-
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Timesheet_Report_${document.getElementById('report-start').value}_to_${document.getElementById('report-end').value}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        // SIGNIFI SUMMARY REPORT ENGINE
         function toggleSignifiDeptFilter(dept) {
             if (dept === 'All') {
                 currentSignifiDeptFilters = ['All'];
@@ -2302,111 +1965,559 @@
             generateSignifiSummary();
         }
 
-        async function generateSignifiSummary() {
-            const startStr = document.getElementById('summary-start').value;
-            const endStr = document.getElementById('summary-end').value;
-            const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
+        function getDateArray(startDateStr, endDateStr) {
+            let dates = [];
+            let curr = new Date(startDateStr + 'T00:00:00');
+            let end = new Date(endDateStr + 'T00:00:00');
+            while (curr <= end) {
+                dates.push(new Date(curr));
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        }
 
-            if (!startStr || !endStr) return alert("Select start and end dates.");
+        async function generateReport() {
+            const startStr = document.getElementById('report-start').value;
+            const endStr = document.getElementById('report-end').value;
+            const container = document.getElementById('report-container');
+            const sortVal = document.getElementById('report-sort') ? document.getElementById('report-sort').value : 'name_asc';
 
-            const container = document.getElementById('summary-container');
-            container.innerHTML = "<p>Loading Signifi Summary...</p>";
+            if (!startStr || !endStr) {
+                container.innerHTML = "<p style='color:red;'>Please select both start and end dates.</p>";
+                return;
+            }
+
+            container.innerHTML = "<p>Generating report...</p>";
 
             try {
-                const { data: snapshot } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi');
-                const depts = new Set();
-                const empList = [];
+                const dates = getDateArray(startStr, endStr);
+                const { data: emps, error: empErr } = await supabaseClient.from('employees').select('*');
+                if (empErr) throw empErr;
 
-                (snapshot || []).forEach(emp => {
-                    if (emp.isLaidOff) return;
-                    const d = emp.department ? emp.department.trim() : 'General';
-                    depts.add(d);
-                    if (currentSignifiDeptFilters.includes('All') || currentSignifiDeptFilters.includes(d)) {
-                        empList.push(emp);
+                const startDateIso = new Date(startStr + 'T00:00:00').toISOString();
+                const endDateIso = new Date(endStr + 'T23:59:59').toISOString();
+
+                const { data: shifts, error: shiftErr } = await supabaseClient.from('shifts')
+                    .select('*')
+                    .gte('timestamp', startDateIso)
+                    .lte('timestamp', endDateIso)
+                    .order('timestamp', { ascending: true });
+                if (shiftErr) throw shiftErr;
+
+                const { data: overrides, error: ovrErr } = await supabaseClient.from('timesheet_overrides').select('*');
+                if (ovrErr) throw ovrErr;
+
+                let overrideMap = {};
+                (overrides || []).forEach(o => {
+                    overrideMap[o.id] = o;
+                });
+
+                // Auto-extract raw punch data into daily map per employee
+                let shiftMap = {};
+                (shifts || []).forEach(s => {
+                    const empIdKey = s.employeeId || s.employeeid;
+                    const d = new Date(s.timestamp);
+                    const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    const key = `${empIdKey}_${dStr}`;
+                    
+                    if (!shiftMap[key]) shiftMap[key] = { in: "", out: "" };
+                    const timeFormatted = formatTimeStr(s.timestamp);
+
+                    if (s.action === 'IN' && !shiftMap[key].in) {
+                        shiftMap[key].in = timeFormatted;
+                    } else if (s.action === 'OUT') {
+                        shiftMap[key].out = timeFormatted;
                     }
                 });
 
-                // Render dynamic Signifi department tabs
-                const signifiDeptTabs = document.getElementById('dynamic-signifi-dept-tabs');
-                if (signifiDeptTabs) {
-                    let dHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
-                    Array.from(depts).sort().forEach(dept => {
-                        const safeDept = dept.replace(/'/g, "\\'");
-                        dHtml += `<button class="filter-btn ${currentSignifiDeptFilters.includes(dept) ? 'active' : ''}" onclick="toggleSignifiDeptFilter('${safeDept}')">${dept}</button>`;
+                // Update Report Tabs (Agencies & Departments) dynamically
+                const agencyTabs = document.getElementById('dynamic-report-filter-tabs');
+                const deptTabs = document.getElementById('dynamic-dept-filter-tabs');
+
+                const reportAgencies = new Set();
+                const reportDepts = new Set();
+
+                (emps || []).forEach(e => {
+                    const isLaidOff = e.isLaidOff ?? e.islaidoff ?? false;
+                    if (!isLaidOff) {
+                        const agencyName = e.agencyName || e.agencyname;
+                        if (e.type === 'Agency' && agencyName) reportAgencies.add(agencyName.trim());
+                        if (e.department) reportDepts.add(e.department.trim());
+                    }
+                });
+
+                if (agencyTabs) {
+                    let agHtml = `<button class="filter-btn ${currentReportFilter === 'All' ? 'active' : ''}" onclick="setReportFilter('All')">All Reports</button>
+                                  <button class="filter-btn ${currentReportFilter === 'Signifi' ? 'active' : ''}" onclick="setReportFilter('Signifi')">Signifi</button>`;
+                    Array.from(reportAgencies).sort().forEach(ag => {
+                        const safeAg = ag.replace(/'/g, "\\'");
+                        agHtml += `<button class="filter-btn ${currentReportFilter === ag ? 'active' : ''}" onclick="setReportFilter('${safeAg}')">${ag}</button>`;
                     });
-                    signifiDeptTabs.innerHTML = dHtml;
+                    agencyTabs.innerHTML = agHtml;
                 }
 
-                empList.sort((a, b) => {
+                if (deptTabs) {
+                    let dpHtml = `<button class="filter-btn ${currentDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleDeptFilter('All')">All</button>`;
+                    Array.from(reportDepts).sort().forEach(dp => {
+                        const safeDp = dp.replace(/'/g, "\\'");
+                        const isActive = currentDeptFilters.includes(dp) ? 'active' : '';
+                        dpHtml += `<button class="filter-btn ${isActive}" onclick="toggleDeptFilter('${safeDp}')">${dp}</button>`;
+                    });
+                    deptTabs.innerHTML = dpHtml;
+                }
+
+                let groups = {};
+
+                (emps || []).forEach(e => {
+                    const isLaidOff = e.isLaidOff ?? e.islaidoff ?? false;
+                    if (isLaidOff) return;
+
+                    const agencyName = e.agencyName || e.agencyname;
+                    const groupKey = (e.type === 'Signifi') ? 'Signifi' : (agencyName ? agencyName.trim() : 'Unnamed Agency');
+                    
+                    if (!groups[groupKey]) groups[groupKey] = [];
+
+                    let passAgencyFilter = false;
+                    if (currentReportFilter === 'All') passAgencyFilter = true;
+                    else if (currentReportFilter === groupKey) passAgencyFilter = true;
+
+                    let passDeptFilter = false;
+                    if (currentDeptFilters.includes('All')) passDeptFilter = true;
+                    else if (e.department && currentDeptFilters.includes(e.department.trim())) passDeptFilter = true;
+
+                    if (passAgencyFilter && passDeptFilter) {
+                        groups[groupKey].push(e);
+                    }
+                });
+
+                let html = '';
+                let groupIdx = 0;
+
+                for (let groupName in groups) {
+                    let groupEmps = groups[groupName];
+                    if (groupEmps.length === 0) continue;
+
+                    groupEmps.sort((a, b) => {
+                        const aCreated = a.createdAt || a.createdat || 0;
+                        const bCreated = b.createdAt || b.createdat || 0;
+                        if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+                        if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+                        if (sortVal === 'newest') return bCreated - aCreated;
+                        if (sortVal === 'oldest') return aCreated - bCreated;
+                        return 0;
+                    });
+
+                    const isSignifiGroup = (groupName === 'Signifi');
+
+                    html += `<table class="report-table" id="report_table_${groupIdx}" data-group-name="${groupName}" data-num-cols="${dates.length}">`;
+                    html += `<thead>`;
+                    html += `<tr><th colspan="${dates.length + 5}" class="report-header-title">${groupName} Timesheet (${startStr} to ${endStr})</th></tr>`;
+                    html += `<tr style="background-color: #d9d9d9; font-weight: bold;">
+                        <th style="width: 150px;">Name</th>
+                        <th style="width: 100px;">Department</th>
+                        <th style="width: 60px;">Shift</th>`;
+                    
+                    dates.forEach(d => {
+                        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                        const dateFormatted = `${d.getMonth() + 1}/${d.getDate()}`;
+                        html += `<th>${dayName}<br>${dateFormatted}</th>`;
+                    });
+
+                    if (isSignifiGroup) {
+                        html += `<th style="width: 90px;">Full Days / Hours</th>`;
+                        html += `<th style="width: 90px;">Extra Hrs</th>`;
+                    } else {
+                        html += `<th style="width: 80px;">Total Hours</th>`;
+                    }
+                    html += `</tr></thead><tbody>`;
+
+                    groupEmps.forEach((emp, empIdx) => {
+                        const payType = emp.payType || emp.paytype || 'Salaried';
+
+                        html += `<tr style="border-top: 2px solid #000;" data-emp-id="${emp.id}" data-emp-type="${emp.type}" data-pay-type="${payType}">
+                            <td rowspan="4" style="font-weight: bold;">${emp.name}</td>
+                            <td rowspan="4">${emp.department || 'General'}</td>
+                            <td><strong>IN</strong></td>`;
+
+                        dates.forEach((d, colIdx) => {
+                            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            const key = `${emp.id}_${dateStr}`;
+                            let valIn = (shiftMap[key] && shiftMap[key].in) ? shiftMap[key].in : "";
+                            
+                            if (overrideMap[key] && overrideMap[key].in !== undefined) {
+                                valIn = overrideMap[key].in;
+                            }
+
+                            html += `<td><input type="text" id="in_${groupIdx}_${empIdx}_${colIdx}" data-date="${dateStr}" value="${valIn}" onchange="recalcTime(${groupIdx}, ${empIdx}, ${colIdx}, ${dates.length}, '${emp.type}', '${payType}', 'in')"></td>`;
+                        });
+
+                        if (isSignifiGroup) {
+                            html += `<td rowspan="4" id="fulldays_${groupIdx}_${empIdx}" class="group-fulldays-${groupIdx}" style="font-weight: bold; background: #f0f4f8;">0 Days</td>`;
+                            html += `<td rowspan="4" id="extrahrs_${groupIdx}_${empIdx}" class="group-extrahrs-${groupIdx}" style="font-weight: bold; background: #f0f4f8;">0:00</td>`;
+                        } else {
+                            html += `<td rowspan="4" id="emptotal_${groupIdx}_${empIdx}" class="group-emptotal-${groupIdx}" style="font-weight: bold; background: #f0f4f8;">0:00</td>`;
+                        }
+                        html += `</tr>`;
+
+                        html += `<tr><td><strong>OUT</strong></td>`;
+                        dates.forEach((d, colIdx) => {
+                            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            const key = `${emp.id}_${dateStr}`;
+                            let valOut = (shiftMap[key] && shiftMap[key].out) ? shiftMap[key].out : "";
+                            if (shiftMap[key] && shiftMap[key].in && !shiftMap[key].out) valOut = "Missed";
+
+                            if (overrideMap[key] && overrideMap[key].out !== undefined) {
+                                valOut = overrideMap[key].out;
+                            }
+
+                            html += `<td><input type="text" id="out_${groupIdx}_${empIdx}_${colIdx}" data-date="${dateStr}" value="${valOut}" onchange="recalcTime(${groupIdx}, ${empIdx}, ${colIdx}, ${dates.length}, '${emp.type}', '${payType}', 'out')"></td>`;
+                        });
+                        html += `</tr>`;
+
+                        const thirdRowLabel = isSignifiGroup ? "Extra" : "Break";
+                        html += `<tr><td><strong>${thirdRowLabel}</strong></td>`;
+                        dates.forEach((d, colIdx) => {
+                            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            const key = `${emp.id}_${dateStr}`;
+                            let valBreak = "";
+
+                            if (overrideMap[key] && overrideMap[key].break !== undefined) {
+                                valBreak = overrideMap[key].break;
+                            }
+
+                            html += `<td><input type="text" id="break_${groupIdx}_${empIdx}_${colIdx}" data-date="${dateStr}" value="${valBreak}" onchange="recalcTime(${groupIdx}, ${empIdx}, ${colIdx}, ${dates.length}, '${emp.type}', '${payType}', 'break')"></td>`;
+                        });
+                        html += `</tr>`;
+
+                        html += `<tr><td><strong>Total</strong></td>`;
+                        dates.forEach((d, colIdx) => {
+                            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            const key = `${emp.id}_${dateStr}`;
+                            let valTotal = "";
+
+                            if (overrideMap[key] && overrideMap[key].total !== undefined) {
+                                valTotal = overrideMap[key].total;
+                            }
+
+                            html += `<td><input type="text" id="total_${groupIdx}_${empIdx}_${colIdx}" data-date="${dateStr}" value="${valTotal}" onchange="recalcTime(${groupIdx}, ${empIdx}, ${colIdx}, ${dates.length}, '${emp.type}', '${payType}', 'total')"></td>`;
+                        });
+                        html += `</tr>`;
+
+                        if (isSignifiGroup) {
+                            html += `<tr style="background-color: #f8f9fa;"><td colspan="${dates.length + 5}" style="text-align: left; padding: 4px 10px; font-size: 0.85rem; color: #555;">Leaves Taken: <span id="leaves_${groupIdx}_${empIdx}" style="font-weight: bold; color: #333;">None</span></td></tr>`;
+                        }
+                    });
+
+                    // Summary Row
+                    html += `<tr style="background-color: #e2e8f0; font-weight: bold; border-top: 2px solid #000;">
+                        <td colspan="3" style="text-align: right; padding-right: 15px;">GRAND TOTAL:</td>`;
+                    
+                    dates.forEach(() => html += `<td>-</td>`);
+
+                    if (isSignifiGroup) {
+                        html += `<td id="grouptotal_fulldays_${groupIdx}">0 Days</td>`;
+                        html += `<td id="grouptotal_extrahrs_${groupIdx}">0:00</td>`;
+                    } else {
+                        html += `<td id="grouptotal_${groupIdx}">0:00</td>`;
+                    }
+
+                    html += `</tr></tbody></table>`;
+                    groupIdx++;
+                }
+
+                if (html === '') {
+                    container.innerHTML = "<p>No matching employee records for selected filters.</p>";
+                    return;
+                }
+
+                container.innerHTML = html;
+
+                // Run Initial Time Recalculation across all generated tables
+                groupIdx = 0;
+                for (let groupName in groups) {
+                    let groupEmps = groups[groupName];
+                    if (groupEmps.length === 0) continue;
+
+                    groupEmps.forEach((emp, empIdx) => {
+                        const payType = emp.payType || emp.paytype || 'Salaried';
+                        dates.forEach((d, colIdx) => {
+                            window.recalcTime(groupIdx, empIdx, colIdx, dates.length, emp.type, payType);
+                        });
+                    });
+                    groupIdx++;
+                }
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<p style="color:red;">Error generating report: ${err.message}</p>`;
+            }
+        }
+
+        async function saveReportChanges() {
+            const btn = document.getElementById('save-changes-btn');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                const tables = document.querySelectorAll('.report-table');
+                const overrideRecords = [];
+
+                tables.forEach((table, gIdx) => {
+                    const empRows = table.querySelectorAll('tr[data-emp-id]');
+                    empRows.forEach((row, eIdx) => {
+                        const empId = row.getAttribute('data-emp-id');
+                        const inputsIn = row.querySelectorAll(`input[id^="in_${gIdx}_${eIdx}_"]`);
+
+                        inputsIn.forEach((inInput, colIdx) => {
+                            const dateStr = inInput.getAttribute('data-date');
+                            const outInput = document.getElementById(`out_${gIdx}_${eIdx}_${colIdx}`);
+                            const breakInput = document.getElementById(`break_${gIdx}_${eIdx}_${colIdx}`);
+                            const totalInput = document.getElementById(`total_${gIdx}_${eIdx}_${colIdx}`);
+
+                            if (empId && dateStr) {
+                                overrideRecords.push({
+                                    id: `${empId}_${dateStr}`,
+                                    empId: empId,
+                                    date: dateStr,
+                                    in: inInput.value.trim(),
+                                    out: outInput ? outInput.value.trim() : "",
+                                    break: breakInput ? breakInput.value.trim() : "",
+                                    total: totalInput ? totalInput.value.trim() : ""
+                                });
+                            }
+                        });
+                    });
+                });
+
+                if (overrideRecords.length > 0) {
+                    const { error } = await supabaseClient.from('timesheet_overrides').upsert(overrideRecords);
+                    if (error) throw error;
+                }
+
+                alert("Timesheet modifications saved successfully!");
+            } catch (err) {
+                console.error("Save error:", err);
+                alert("Failed to save changes: " + err.message);
+            } finally {
+                btn.innerText = "Save Changes";
+                btn.disabled = false;
+            }
+        }
+
+        async function applyStatHoliday() {
+            const statDate = document.getElementById('stat-holiday-date').value;
+            if (!statDate) return alert("Please select a date for Stat Holiday.");
+
+            try {
+                const { data: emps, error } = await supabaseClient.from('employees').select('id, type, isLaidOff, islaidoff');
+                if (error) throw error;
+
+                const overrides = [];
+                (emps || []).forEach(emp => {
+                    const isLaidOff = emp.isLaidOff ?? emp.islaidoff ?? false;
+                    if (!isLaidOff) {
+                        const isSignifi = (emp.type === 'Signifi');
+                        overrides.push({
+                            id: `${emp.id}_${statDate}`,
+                            empId: emp.id,
+                            date: statDate,
+                            in: "0",
+                            out: "0",
+                            break: "0",
+                            total: isSignifi ? "Stat Holiday" : "Off"
+                        });
+                    }
+                });
+
+                if (overrides.length > 0) {
+                    const { error: upsertErr } = await supabaseClient.from('timesheet_overrides').upsert(overrides);
+                    if (upsertErr) throw upsertErr;
+                }
+
+                alert(`Stat Holiday applied for ${statDate}! Regenerating report...`);
+                generateReport();
+            } catch (err) {
+                alert("Error applying stat holiday: " + err.message);
+            }
+        }
+
+        function exportReportToExcel() {
+            const tables = document.querySelectorAll('.report-table');
+            if (tables.length === 0) return alert("No table data available to export.");
+
+            const wb = XLSX.utils.book_new();
+            tables.forEach((table, idx) => {
+                const groupName = table.getAttribute('data-group-name') || `Sheet${idx + 1}`;
+                const ws = XLSX.utils.table_to_sheet(table);
+                XLSX.utils.book_append_sheet(wb, ws, groupName.substring(0, 31));
+            });
+
+            XLSX.writeFile(wb, `Timesheet_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        }
+
+        // SIGNIFI SUMMARY REPORT TAB
+        async function generateSignifiSummary() {
+            const startStr = document.getElementById('summary-start').value;
+            const endStr = document.getElementById('summary-end').value;
+            const container = document.getElementById('summary-container');
+            const sortVal = document.getElementById('signifi-report-sort') ? document.getElementById('signifi-report-sort').value : 'name_asc';
+            const viewMode = document.getElementById('signifi-report-view-mode') ? document.getElementById('signifi-report-view-mode').value : 'bottom';
+
+            if (!startStr || !endStr) {
+                container.innerHTML = "<p style='color:red;'>Please select both start and end dates.</p>";
+                return;
+            }
+
+            container.innerHTML = "<p>Generating Signifi Summary...</p>";
+
+            try {
+                const dates = getDateArray(startStr, endStr);
+                const { data: emps, error: empErr } = await supabaseClient.from('employees').select('*').eq('type', 'Signifi');
+                if (empErr) throw empErr;
+
+                const { data: overrides, error: ovrErr } = await supabaseClient.from('timesheet_overrides').select('*');
+                if (ovrErr) throw ovrErr;
+
+                let overrideMap = {};
+                (overrides || []).forEach(o => { overrideMap[o.id] = o; });
+
+                const deptTabs = document.getElementById('dynamic-signifi-dept-tabs');
+                const depts = new Set();
+                (emps || []).forEach(e => {
+                    const isLaidOff = e.isLaidOff ?? e.islaidoff ?? false;
+                    if (!isLaidOff && e.department) depts.add(e.department.trim());
+                });
+
+                if (deptTabs) {
+                    let dpHtml = `<button class="filter-btn ${currentSignifiDeptFilters.includes('All') ? 'active' : ''}" onclick="toggleSignifiDeptFilter('All')">All</button>`;
+                    Array.from(depts).sort().forEach(dp => {
+                        const safeDp = dp.replace(/'/g, "\\'");
+                        const isActive = currentSignifiDeptFilters.includes(dp) ? 'active' : '';
+                        dpHtml += `<button class="filter-btn ${isActive}" onclick="toggleSignifiDeptFilter('${safeDp}')">${dp}</button>`;
+                    });
+                    deptTabs.innerHTML = dpHtml;
+                }
+
+                let filteredEmps = (emps || []).filter(e => {
+                    const isLaidOff = e.isLaidOff ?? e.islaidoff ?? false;
+                    if (isLaidOff) return false;
+
+                    if (currentSignifiDeptFilters.includes('All')) return true;
+                    return e.department && currentSignifiDeptFilters.includes(e.department.trim());
+                });
+
+                filteredEmps.sort((a, b) => {
+                    const aCreated = a.createdAt || a.createdat || 0;
+                    const bCreated = b.createdAt || b.createdat || 0;
                     if (sortVal === 'name_asc') return (a.name || '').localeCompare(b.name || '');
                     if (sortVal === 'name_desc') return (b.name || '').localeCompare(a.name || '');
-                    if (sortVal === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
-                    if (sortVal === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+                    if (sortVal === 'newest') return bCreated - aCreated;
+                    if (sortVal === 'oldest') return aCreated - bCreated;
                     return 0;
                 });
 
-                let html = `<table class="report-table" style="width:100%; border:2px solid #000; border-collapse:collapse; font-family:Calibri, sans-serif;">
-                    <thead>
-                        <tr style="background-color:#bfbfbf;">
-                            <th colspan="8" class="report-header-title">Signifi Employee Summary Report (${startStr} to ${endStr})</th>
-                        </tr>
-                        <tr style="background-color:#d9d9d9;">
-                            <th>S.NO.</th>
-                            <th>Employee Name</th>
-                            <th>Department</th>
-                            <th>Pay Type</th>
-                            <th>Vacation (Rem/Tot)</th>
-                            <th>Sick Days (Rem/Tot)</th>
-                            <th>Paid Lieu (Rem/Tot)</th>
-                            <th>Account Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+                if (filteredEmps.length === 0) {
+                    container.innerHTML = "<p>No Signifi employees found for selected filters.</p>";
+                    return;
+                }
 
-                empList.forEach((emp, idx) => {
-                    const vacRem = (emp.vacationTotal || 0) - (emp.vacationUsed || 0);
-                    const sickRem = (emp.sickTotal || 0) - (emp.sickUsed || 0);
-                    const lieuRem = (emp.lieuTotal || 0) - (emp.lieuUsed || 0);
+                let html = `<table class="report-table" id="signifi_summary_table">
+                    <thead>
+                        <tr><th colspan="${viewMode === 'weekly' ? dates.length + 6 : 6}" class="report-header-title">Signifi Summary Report (${startStr} to ${endStr})</th></tr>
+                        <tr style="background-color: #d9d9d9; font-weight: bold;">
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Pay Type</th>`;
+
+                if (viewMode === 'weekly') {
+                    dates.forEach(d => {
+                        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                        const dateFormatted = `${d.getMonth() + 1}/${d.getDate()}`;
+                        html += `<th>${dayName}<br>${dateFormatted}</th>`;
+                    });
+                }
+
+                html += `<th>Full Days / Total Hours</th><th>Extra Hours</th><th>Leaves</th></tr></thead><tbody>`;
+
+                filteredEmps.forEach(emp => {
+                    const payType = emp.payType || emp.paytype || 'Salaried';
+                    const isHourly = (payType === 'Hourly');
+                    
+                    let fullDaysCount = 0;
+                    let extraMins = 0;
+                    let totalHourlyMins = 0;
+                    let leavesList = [];
+
+                    let dailyCellsHtml = '';
+
+                    dates.forEach(d => {
+                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        const key = `${emp.id}_${dateStr}`;
+                        
+                        let tVal = overrideMap[key] ? (overrideMap[key].total || "") : "";
+                        let extVal = overrideMap[key] ? (overrideMap[key].break || "") : "";
+
+                        if (isHourly) {
+                            if (tVal.toLowerCase().includes('vacation') || tVal.toLowerCase().includes('sick') || tVal.toLowerCase().includes('paid lieu') || tVal.toLowerCase().includes('stat holiday')) {
+                                totalHourlyMins += 480;
+                                leavesList.push(tVal);
+                            } else if (!tVal.toLowerCase().includes('off') && tVal !== "") {
+                                totalHourlyMins += (parseTimeString(tVal) || 0);
+                            }
+                        } else {
+                            if (tVal.toLowerCase() === "full day" || tVal.toLowerCase().includes('vacation') || tVal.toLowerCase().includes('sick') || tVal.toLowerCase().includes('paid lieu') || tVal.toLowerCase().includes('stat holiday')) {
+                                fullDaysCount++;
+                            }
+                            if (tVal.toLowerCase().includes('vacation') || tVal.toLowerCase().includes('sick') || tVal.toLowerCase().includes('paid lieu') || tVal.toLowerCase().includes('stat holiday')) {
+                                leavesList.push(tVal);
+                            }
+                            extraMins += (parseTimeString(extVal) || 0);
+                        }
+
+                        if (viewMode === 'weekly') {
+                            dailyCellsHtml += `<td>${tVal || '-'}</td>`;
+                        }
+                    });
+
+                    let displayFullDays = isHourly ? `${formatMinsToTime(totalHourlyMins)} Hours` : `${fullDaysCount} Days`;
+                    let displayExtra = isHourly ? '-' : (formatMinsToTime(extraMins) || "0:00");
+
+                    let leaveSummary = {};
+                    leavesList.forEach(l => {
+                        let k = l.split('-')[0];
+                        leaveSummary[k] = (leaveSummary[k] || 0) + 1;
+                    });
+                    let displayLeaves = Object.keys(leaveSummary).map(k => `${leaveSummary[k]} ${k}`).join(', ') || 'None';
 
                     html += `<tr>
-                        <td><strong>${idx + 1}</strong></td>
-                        <td style="text-align:left; font-weight:bold;">${emp.name}</td>
+                        <td style="font-weight: bold; text-align: left;">${emp.name}</td>
                         <td>${emp.department || 'General'}</td>
-                        <td>${emp.payType || 'Salaried'}</td>
-                        <td>${vacRem} / ${emp.vacationTotal || 0}</td>
-                        <td>${sickRem} / ${emp.sickTotal || 0}</td>
-                        <td>${lieuRem} / ${emp.lieuTotal || 0}</td>
-                        <td><span style="color:green; font-weight:bold;">Active</span></td>
+                        <td>${payType}</td>
+                        ${dailyCellsHtml}
+                        <td style="font-weight: bold;">${displayFullDays}</td>
+                        <td style="font-weight: bold;">${displayExtra}</td>
+                        <td style="text-align: left;">${displayLeaves}</td>
                     </tr>`;
                 });
 
                 html += `</tbody></table>`;
                 container.innerHTML = html;
 
-            } catch(e) {
-                console.error(e);
-                container.innerHTML = `<p style="color:red;">Error loading Signifi summary: ${e.message}</p>`;
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<p style="color:red;">Error generating Signifi summary: ${err.message}</p>`;
             }
         }
 
         function exportSummaryToExcel() {
-            const container = document.getElementById('summary-container');
-            if (!container || !container.querySelector('table')) {
-                return alert("No Signifi summary available to export.");
-            }
+            const table = document.getElementById('signifi_summary_table');
+            if (!table) return alert("No summary table available to export.");
 
-            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Signifi Summary</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
-            <body>${container.innerHTML}</body></html>`;
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(table);
+            XLSX.utils.book_append_sheet(wb, ws, "Signifi Summary");
 
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Signifi_Summary_${document.getElementById('summary-start').value}_to_${document.getElementById('summary-end').value}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            XLSX.writeFile(wb, `Signifi_Summary_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
         }
     </script>
 </body>
